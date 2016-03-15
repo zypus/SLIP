@@ -1,23 +1,24 @@
-import com.beust.kobalt.*
+
 import com.beust.kobalt.plugin.packaging.assemble
-import com.beust.kobalt.plugin.kotlin.*
+import com.beust.kobalt.project
+import com.beust.kobalt.repos
 
 val repos = repos("https://oss.sonatype.org/content/repositories/snapshots/")
 
 
 val p = project {
 
-    name = "spring"
+    name = "SLIP"
     group = "com.zypus"
     artifactId = name
     version = "0.1"
 
     sourceDirectories {
-        path("src/code")
+        path("src")
     }
 
     sourceDirectoriesTest {
-        path("src/test")
+        path("test")
     }
 
     dependencies {
@@ -27,7 +28,7 @@ val p = project {
 
     dependenciesTest {
 //        compile("org.testng:testng:6.9.5")
-
+        compile("junit:junit:4.4")
     }
 
     assemble {
