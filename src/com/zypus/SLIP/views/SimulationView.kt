@@ -1,9 +1,9 @@
 package com.zypus.SLIP.views
 
-import com.zypus.math.Vector2
-import com.zypus.math.percent
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
+import com.zypus.math.Vector2
+import com.zypus.math.percent
 import javafx.application.Platform
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
@@ -38,8 +38,8 @@ class SimulationView : View() {
 //			val slip = SLIP(initial).copy(controller = SpringEvolution().evolve())
 			//		val environment = Environment(terrain = { 40.0+20*sin(0.1*it) })
 			val environment = Environment(terrain = { 30.0 })
-			var state = SimulationState(slip, environment)
 			val setting = SimulationSetting()
+			var state = SimulationState(slip, environment)
 
 			val gc = canvas.graphicsContext2D
 

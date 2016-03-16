@@ -1,6 +1,5 @@
 package com.zypus.SLIP.algorithms
 
-import com.zypus.math.Vector2
 import com.zypus.SLIP.algorithms.genetic.Selection
 import com.zypus.SLIP.algorithms.genetic.builder.evolution
 import com.zypus.SLIP.algorithms.genetic.crossover
@@ -8,6 +7,7 @@ import com.zypus.SLIP.algorithms.genetic.elitist
 import com.zypus.SLIP.algorithms.genetic.mutate
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
+import com.zypus.math.Vector2
 
 /**
  * TODO Add description
