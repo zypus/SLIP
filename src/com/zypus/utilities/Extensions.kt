@@ -1,4 +1,4 @@
-package com.zypus.math
+package com.zypus.utilities
 
 /**
  * TODO Add description

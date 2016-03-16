@@ -1,9 +1,9 @@
 package com.zypus.SLIP.views
 
-import com.zypus.SLIP.controllers.SimulationController
+import com.zypus.SLIP.controllers.SimulationController2
 import com.zypus.SLIP.models.*
-import com.zypus.math.Vector2
-import com.zypus.math.percent
+import com.zypus.utilities.Vector2
+import com.zypus.utilities.percent
 import javafx.application.Platform
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
@@ -35,8 +35,9 @@ class SimulationView : View() {
 			val initial = Initial(position = Vector2(0, 210))
 			//		val slip = SLIP(initial).copy(controller = SpringController { 0.021 * -it.velocity.x + 0.01 })
 					val slip = SLIP(initial).copy(controller = SpringController { -0.02014512293491862 * it.velocity.x + 0.13381311880313776 })
+//			val slip = SLIP(initial)
 //			val slip = SLIP(initial).copy(controller = SpringEvolution().evolve())
-			//		val environment = Environment(terrain = { 40.0+20*sin(0.1*it) })
+//					val environment = Environment(terrain = { 40.0+20*sin(0.1*it) })
 			val environment = Environment(terrain = { 30.0 })
 			val setting = SimulationSetting()
 			var state = SimulationState(slip, environment)
@@ -45,7 +46,7 @@ class SimulationView : View() {
 
 			EventStreams.animationFrames()
 					.feedTo {
-						state = SimulationController.step(state, setting)
+						state = SimulationController2.step(state, setting)
 						gc.drawSimulationState(state)
 					}
 		}
@@ -92,6 +93,9 @@ class SimulationView : View() {
 
 		// Draw markers.
 		drawMarkers(start, end, canvas.width / 2 - x, 50, 10, 6.0, 3.0)
+
+		// Draw Info.
+		drawStateInfo(state)
 	}
 
 	/**
@@ -193,5 +197,23 @@ class SimulationView : View() {
 			majors += major
 		}
 	}
+
+	fun GraphicsContext.drawStateInfo(state: SimulationState) {
+		val slip = state.slip
+		// E_pot = m * g * h
+		val potentialEnergy = slip.mass * -state.environment.gravity.y * slip.position.y
+		// E_kin = 0.5 * m * v^2
+		val kineticEnergy = 0.5 * slip.mass * slip.velocity.norm2
+		// E_ela = 0.5 * k * dl^2
+		val elasticEnergy = 0.5 * slip.springConstant * Math.pow(slip.restLength-slip.length,2.0)
+		val totalEnergy = potentialEnergy+kineticEnergy+elasticEnergy
+		var i = 0
+		fillText("Potential Energy: ${(potentialEnergy*100).toInt()/100.0}", 10.0, 20.0 * ++i)
+		fillText("Kinetic Energy  : ${(kineticEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
+		fillText("Elastic Energy  : ${(elasticEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
+		fillText("------------------------", 10.0, 20.0 * ++i)
+		fillText("Total Energy    : ${(totalEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
+	}
+
 
 }

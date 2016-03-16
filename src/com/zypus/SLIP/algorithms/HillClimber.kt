@@ -2,7 +2,7 @@ package com.zypus.SLIP.algorithms
 
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
-import com.zypus.math.Vector2
+import com.zypus.utilities.Vector2
 
 /**
  * TODO Add description

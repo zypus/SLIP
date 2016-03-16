@@ -1,4 +1,4 @@
-package com.zypus.math
+package com.zypus.utilities
 
 import java.lang.Math.max
 import java.lang.Math.min

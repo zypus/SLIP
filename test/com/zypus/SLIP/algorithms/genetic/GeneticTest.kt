@@ -1,6 +1,6 @@
 package com.zypus.SLIP.algorithms.genetic
 
-import com.zypus.math.pickRandom
+import com.zypus.utilities.pickRandom
 import com.zypus.SLIP.algorithms.genetic.builder.evolution
 import org.junit.Assert
 import org.junit.Test

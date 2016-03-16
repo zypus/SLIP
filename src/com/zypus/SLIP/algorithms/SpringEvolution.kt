@@ -7,7 +7,7 @@ import com.zypus.SLIP.algorithms.genetic.elitist
 import com.zypus.SLIP.algorithms.genetic.mutate
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
-import com.zypus.math.Vector2
+import com.zypus.utilities.Vector2
 
 /**
  * TODO Add description

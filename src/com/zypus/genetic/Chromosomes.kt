@@ -1,6 +1,6 @@
 package com.zypus.SLIP.algorithms.genetic
 
-import com.zypus.math.pickRandom
+import com.zypus.utilities.pickRandom
 import sun.jvm.hotspot.debugger.posix.elf.ELFSectionHeader
 
 /**
