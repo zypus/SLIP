@@ -37,7 +37,7 @@ class SimulationView : View() {
 					val slip = SLIP(initial).copy(controller = SpringController { -0.02014512293491862 * it.velocity.x + 0.13381311880313776 })
 //			val slip = SLIP(initial)
 //			val slip = SLIP(initial).copy(controller = SpringEvolution().evolve())
-//					val environment = Environment(terrain = { 40.0+20*sin(0.1*it) })
+//					val environment = Environment(terrain = { 40.0+10*sin(0.1*it) })
 			val environment = Environment(terrain = { 30.0 })
 			val setting = SimulationSetting()
 			var state = SimulationState(slip, environment)
@@ -201,7 +201,7 @@ class SimulationView : View() {
 	fun GraphicsContext.drawStateInfo(state: SimulationState) {
 		val slip = state.slip
 		// E_pot = m * g * h
-		val potentialEnergy = slip.mass * -state.environment.gravity.y * slip.position.y
+		val potentialEnergy = slip.mass * -state.environment.gravity.y * (slip.position.y-slip.radius-state.environment.terrain(slip.position.y))
 		// E_kin = 0.5 * m * v^2
 		val kineticEnergy = 0.5 * slip.mass * slip.velocity.norm2
 		// E_ela = 0.5 * k * dl^2

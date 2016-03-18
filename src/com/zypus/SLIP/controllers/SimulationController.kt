@@ -108,44 +108,46 @@ class SimulationController2 {
 		fun step(state: SimulationState, setting: SimulationSetting): SimulationState {
 			var (dt, eps) = setting
 			var (pos, v, a, L, l, k, M, R, sPos, v0, p0, c) = state.slip
-			val (G, terrain) = state.environment
+			val (G, Fg) = state.environment
 			// Compute the height from the tip off the spring to the mass center.
 			var h = cos(a) * (L + R);
 			// If the height h is less than the distance to the ground y, the system is in the stance phase.
-			val ty = terrain(pos.x - sin(a) * (L + R))
-			if (pos.y < h + ty) {
+			val ty = Fg(pos.x - sin(a) * (L + R))
 
-				// Compute the angle a between the stance point and the center of the mass.
-				//a = atan2(pos.x - sPos.x, pos.y - sPos.y)
-				// Determine the compression X of the spring.
-				val X = L - l;
-				var x: List<Double> = arrayListOf(pos.x, pos.y, v.x, v.y, l, a)
+			if (pos.y <= h + ty) {
+
+				val sq: (Double) -> Double = { it*it }
+				val Fs: (Double,Double) -> Double = { ll, dl -> k*(L-ll) }
+				var x: List<Double> = arrayListOf(pos.x, pos.y, v.x, v.y)
 				val f: List<(List<Double>) -> Double> = arrayListOf(
 						{ x -> x[2] }, // x' = v.x
 						{ x -> x[3] }, // y' = v.y
-						{ x -> k * ((L - x[4]) * sin(x[5])) / M }, // v.x' = k * (X*sin(a)) / M
-						{ x -> k * ((L - x[4]) * cos(x[5])) / M + G.y }, // v.y' = k * (X*cos(a)) / M + G.y
-//						{ x -> 2.0 * cos(x[5]) * x[3] / (cos(2*x[5]) + 1) }, // l' = v.y / cos(a)
-						{ x -> (((x[0] - sPos.x) * x[2]) + (x[1] - sPos.y) * x[3]) / sqrt(pow(x[0] - sPos.x, 2.0) + pow(x[1] - sPos.y, 2.0) ) }, // l' = v.y / cos(a)
-						{ x -> (((x[1] - sPos.y) * x[2]) - (x[0] - sPos.x) * x[3]) / (pow(x[0] - sPos.x, 2.0) + pow(x[1] - sPos.y, 2.0) ) }    // a' = atan2(v.x,v.y)
+						{ x -> Fs( sqrt( sq(x[0] - sPos.x) + sq(x[1] - Fg(sPos.x)) ) - R, ((x[0]-sPos.x)*x[2] + (x[1] - Fg(sPos.x))*x[3]) / sqrt(sq(x[0] - sPos.x) + sq(x[1] - Fg(sPos.x))) ) * sin(atan2((x[0]-sPos.x), (x[1] - Fg(sPos.x)))) / M }, // v.x' = k * (X*sin(a)) / M
+						{ x -> Fs(sqrt(sq(x[0] - sPos.x) + sq(x[1] - Fg(sPos.x))) - R, ((x[0] - sPos.x) * x[2] + (x[1] - Fg(sPos.x)) * x[3]) / sqrt(sq(x[0] - sPos.x) + sq(x[1] - Fg(sPos.x)))) * cos(atan2((x[0] - sPos.x), (x[1] - Fg(sPos.x)))) / M + G.y } // v.y' = k * (X*cos(a)) / M + G.y
 				)
 
 
 				var nx = rungeKutta(x, f, dt)
 
-				val tipDisplacement = Vector2(sin(nx[5]) * (L + R), cos(nx[5]) * (L + R))
+				// Compute the angle a between the stance point and the center of the mass.
+				a = atan2(x[0] - sPos.x, x[1] - sPos.y)
+
+				// Compute the position of the spring tip.
+				val tipDisplacement = Vector2(sin(a) * (L + R), cos(a) * (L + R))
 				var tip = Vector2(nx[0], nx[1]) - tipDisplacement
+//				var tip = Vector2(nx[4], Fg(nx[4]))
 				// As long as the spring lifts of the ground recompute with a smaller time step.
-				if (nx[1] > h + terrain(tip.x) ) {
-					while (abs(nx[1] - (h + terrain(tip.x))) >= eps) {
-						if (nx[1] > h + terrain(tip.x) ) {
+				if (nx[1] > h + Fg(tip.x) ) {
+					while (abs(nx[1] - (h + Fg(tip.x))) >= eps) {
+						if (nx[1] > h + Fg(tip.x) ) {
 							dt *= 0.5
 						}
 						else {
 							x = nx
 						}
 						nx = rungeKutta(x, f, dt)
-						tip = Vector2(nx[0], nx[1]) - Vector2(sin(nx[5]) * (L + R), cos(nx[5]) * (L + R))
+						a = atan2(x[0] - sPos.x, x[1] - sPos.y)
+						tip = Vector2(nx[0], nx[1]) - Vector2(sin(a) * (L + R), cos(a) * (L + R))
 					}
 				}
 
@@ -154,24 +156,29 @@ class SimulationController2 {
 				// Update the position of the system.
 				pos = Vector2(nx[0], nx[1])
 
-				// Recompute the angle and the length.
 				// Compute the angle a between the stance point and the center of the mass.
-				a = nx[5]
+				a = atan2(pos.x - sPos.x, pos.y - sPos.y)
 				// Compute the current length l of the spring.
-				l = nx[4]
+				l = ((pos.y - sPos.y) / cos(a)) - R
 			}
 			// Else the system is in the flight phase.
 			else {
 				// Get the controller input and update angle but only if the spring remains above the ground.
 				if (v.y < 0) {
 					val na = a.lerp(c.control(state.slip) % PI, 0.2)
-					if (pos.y > cos(na) * (L + R) + terrain(pos.x - sin(na) * (L + R))) {
+					if (pos.y > cos(na) * (L + R) + Fg(pos.x - sin(na) * (L + R))) {
 						a = na
 					}
 				}
-				h = cos(a) * (L + R);
-				// Set the current length l of the spring back to the rest length L.
-								l = L
+				// NOTE Hack the position such that the spare spring energy is preserved
+				if (l != L) {
+					val spareEnergy = 0.5 * k * Math.pow(L - l, 2.0)
+					val p = spareEnergy / (M * -G.y)
+					val dp = Vector2(0.0, p)
+					pos += dp
+					// Set the current length l of the spring back to the rest length L.
+					l = L
+				}
 				var x: List<Double> = arrayListOf(pos.x, pos.y, v.x, v.y)
 				val f: List<(List<Double>) -> Double> = arrayListOf(
 						{ x -> x[2] }, // x' = v.x
@@ -182,13 +189,13 @@ class SimulationController2 {
 
 				var nx = rungeKutta(x, f, dt)
 				// NOTE This is the most crucial part of this simulation: To determine where the spring will land. Every inaccuracy will result in energy loss.
-				// Check if the spring touches the ground.
+				// Compute the position of the spring tip.
 				val tipDisplacement = Vector2(sin(a) * (L + R), cos(a) * (L + R))
 				var tip = Vector2(nx[0], nx[1]) - tipDisplacement
 				// As long as the spring penetrates the ground recompute with a smaller time step.
-				if (nx[1] < h + terrain(tip.x) ) {
-					while (abs(nx[1] - (h + terrain(tip.x))) >= eps) {
-						if (nx[1] < h + terrain(tip.x) ) {
+				if (tip.y < Fg(tip.x) ) {
+					while (abs(tip.y - Fg(tip.x)) >= eps) {
+						if (tip.y < Fg(tip.x) ) {
 							dt *= 0.5
 						}
 						else {
@@ -198,13 +205,15 @@ class SimulationController2 {
 						tip = Vector2(nx[0], nx[1]) - tipDisplacement
 					}
 				}
+				// Translate the state vector back to the state representation.
 				v = Vector2(nx[2], nx[3])
 				pos = Vector2(nx[0], nx[1])
 				sPos = pos - tipDisplacement
 			}
+
 			// If the mass touches the ground stop the movement.
-			if (pos.y < R + terrain(pos.x)) {
-				pos = Vector2(pos.x - dt * v.x, R + terrain(pos.x))
+			if (pos.y < R + Fg(pos.x)) {
+				pos = Vector2(pos.x - dt * v.x, R + Fg(pos.x))
 				v = Vector2(0, 0)
 			}
 
