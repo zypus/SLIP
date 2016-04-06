@@ -21,6 +21,8 @@ data class Vector2(val x: Double, val y: Double) {
 
     val norm2 = x*x+y*y
 
+    val norm = Math.sqrt(norm2)
+
     override fun toString(): String {
         return "( $x , $y )"
     }
