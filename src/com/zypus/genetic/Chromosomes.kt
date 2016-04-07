@@ -1,7 +1,6 @@
 package com.zypus.SLIP.algorithms.genetic
 
 import com.zypus.utilities.pickRandom
-import sun.jvm.hotspot.debugger.posix.elf.ELFSectionHeader
 
 /**
  * TODO Add description
@@ -59,11 +58,11 @@ fun <E> Collection<E>.crossover(other: Collection<E>, expectedCrossovers: Double
 	return list
 }
 
-fun <E> Collection<E>.mutate(expectedMutations: Double, normalize: Boolean = true, mutation: (E) -> E): Collection<E> {
+fun <E> Collection<E>.mutate(expectedMutations: Double, normalize: Boolean = true, mutation: (Int,E) -> E): Collection<E> {
 
 	val chance = if (normalize) expectedMutations / this.size else expectedMutations
 
-	return this.map { if (Math.random() < chance) mutation(it) else it }
+	return this.mapIndexed { i, e -> if (Math.random() < chance) mutation(i,e) else e }
 
 }
 

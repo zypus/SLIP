@@ -1,8 +1,6 @@
 package com.zypus.SLIP.algorithms.genetic
 
 import com.zypus.utilities.pickRandom
-import java.lang.Math.max
-import java.lang.Math.random
 
 /**
  * TODO Add description
@@ -16,14 +14,6 @@ data class EvolutionState<SG : Any, SP : Any, SB : Any, PG : Any, PP : Any, PB :
 
 data class Entity<G : Any, P : Any, B: Any>(val genotype: G, val behavior: MutableMap<Any, B> = hashMapOf(), val phenoMapping: (G) -> P) {
 	val phenotype by lazy { phenoMapping(genotype) }
-
-	override fun hashCode(): Int {
-		return genotype.hashCode()
-	}
-
-	override fun equals(other: Any?): Boolean {
-		return other != null && other.hashCode() == this.hashCode()
-	}
 }
 
 data class Selection<G : Any, P : Any, B : Any>(val parents: List<Pair<Entity<G, P, B>, Entity<G, P, B>>>, val toBeRemoved: List<Entity<G, P, B>>)

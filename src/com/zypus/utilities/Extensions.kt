@@ -8,6 +8,12 @@ package com.zypus.utilities
  * @created 24/02/16
  */
 
+val Number.squared: Double
+	get() = Math.pow(toDouble(),2.0)
+
+val Number.cubed: Double
+	get() = Math.pow(toDouble(), 3.0)
+
 val Number.percent: Double
 	get() = toDouble()/100
 

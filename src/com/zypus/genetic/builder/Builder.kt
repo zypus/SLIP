@@ -25,6 +25,17 @@ class EvolutionBuilder<SG : Any, SP : Any, SB : Any, PG : Any, PP : Any, PB : An
 	var singularProblem: PG? = null
 		set(value) { problem = { initialize = { value!! } } }
 
+	// Take a list of static problems, make sure not to create more problems than contained in the list
+	var staticProblems: List<PG>? = null
+		set(value) {
+			problem = {
+				var i = 0
+				initialize = {
+					value!![i++]
+				}
+			}
+		}
+
 	operator fun invoke(): EvolutionRules<SG, SP, SB, PG, PP, PB> {
 		val solutionBuilder = EvolverBuilder<SG, SP, SB>()
 		solutionBuilder.solution()
