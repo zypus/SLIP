@@ -11,7 +11,7 @@ import java.lang.Math.*
  * @created 04/04/16
  */
 
-class Statistic {
+class Statistic() {
 
 	val rows: MutableList<Row> = arrayListOf()
 	var compressed = false
@@ -20,8 +20,9 @@ class Statistic {
 	val current: Row?
 		get() = if (initialized) rows.last() else null
 
-	fun initialize(state: SimulationState, setting: SimulationSetting) {
+	fun initialize(state: SimulationState, setting: SimulationSetting, type: String = "unspecified") {
 		rows += Row(state.slip)
+		rows.last().type = type
 		initialized = true
 	}
 
@@ -58,6 +59,7 @@ class Statistic {
 	}
 
 	class Row(slip: SLIP) {
+		var type = "unspecified"
 		var ia = slip.angle
 		var ik = slip.springConstant
 		var ix = slip.position.x
@@ -78,13 +80,13 @@ class Statistic {
 		var endDistance = 0.0
 
 		fun toCSV(): String {
-			return "$ia, $ik, $ix, $iy, $ivx, $ivy, $ir, $im, $il, $numberOfJumps, $totalTime, $maxDistance, $maxHeight, $maxVelocity, $maxAngle, $minLength, ${if(collapsed) 1 else 0}, $endDistance"
+			return "$type, $ia, $ik, $ix, $iy, $ivx, $ivy, $ir, $im, $il, $numberOfJumps, $totalTime, $maxDistance, $maxHeight, $maxVelocity, $maxAngle, $minLength, ${if(collapsed) 1 else 0}, $endDistance"
 		}
 	}
 
 	fun toCSV(): String {
 		val builder = StringBuilder()
-		builder.appendln("initial angle, initial spring constant, initial x, initial y, initial vx, initial vy, initial radius, initial mass, initial length, number of jumps, total time, max distance, max height, max velocity, max angle, min length, collapsed, end distance")
+		builder.appendln("type, initial angle, initial spring constant, initial x, initial y, initial vx, initial vy, initial radius, initial mass, initial length, number of jumps, total time, max distance, max height, max velocity, max angle, min length, collapsed, end distance")
 		rows.forEach { builder.appendln(it.toCSV()) }
 		return builder.toString()
 	}
