@@ -14,7 +14,7 @@ import java.io.File
  */
 
 fun main(args: Array<String>) {
-	val statistic = Statistic()
+	val statistic = Statistic("type", "initial x", "initial y", "initial vx", "initial vy", "initial angle", "rest length", "initial mass", "initial spring constant", "_compressed", "number of jumps", "collapsed", "max distance", "max height", "max velocity", "max angle", "min length", "end distance", "total time", "a", "b")
 
 	val environment = Environment()
 	val setting = SimulationSetting()
@@ -28,13 +28,16 @@ fun main(args: Array<String>) {
 			val slip = SLIP(position = Vector2(0, 210), velocity = Vector2(0, 0), controller = SpringController { a*it.velocity.x+b })
 			var state = SimulationState(slip, environment)
 			// initialize new statistic recording
-			statistic.initialize(state, setting, a = a, b = b)
-			// run the simulation until the slip collapsed or completed 50 jumps
-			while (!(statistic.current?.collapsed ?: true) && statistic.current?.numberOfJumps ?: 0 < 50 ) {
-				state = SimulationController.step(state, setting)
-				statistic.update(state, setting)
+			val row = statistic.newRow().apply {
+				init(state, setting)
+				this["a"] = a
+				this["b"] = b
 			}
-			statistic.finalize(state, setting)
+			// run the simulation until the slip collapses or completed 50 jumps
+			while (!(row.boolean("collapsed") ?: false) && row.int("number of jumps") ?: 0 < 50 ) {
+				state = SimulationController.step(state, setting)
+				row.update(state, setting)
+			}
 		}
 	}
 
