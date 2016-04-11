@@ -132,17 +132,17 @@ class Benchmark {
 						when (random.nextDouble()) {
 							// decrease/increase the value a bit
 							in 0.0..0.2 -> {
-								min(bound.first, e - 0.000001)
+								max(bound.first, e - 0.000001)
 							}
 							in 0.2..0.4 -> {
-								max(e + 0.000001, bound.second)
+								min(e + 0.000001, bound.second)
 							}
 							// decrease/increase in percent
 							in 0.4..0.6 -> {
-								min(bound.first, e * 90.percent)
+								min(max(bound.first, e * 90.percent), bound.second)
 							}
 							in 0.6..0.8 -> {
-								max(e * 110.percent, bound.second)
+								max(bound.first,min(e * 110.percent, bound.second))
 							}
 							// assign a new random value, which is in the bounds
 							else -> {

@@ -20,13 +20,20 @@ class Statistic() {
 	val current: Row?
 		get() = if (initialized) rows.last() else null
 
-	fun initialize(state: SimulationState, setting: SimulationSetting, type: String = "unspecified") {
-		rows += Row(state.slip)
-		rows.last().type = type
+	fun initialize(state: SimulationState, setting: SimulationSetting, type: String = "unspecified", a: Double? = null, b: Double? = null, c: Double? = null, d: Double? = null, e: Double? = null) {
+		val row = Row(state.slip)
+		row.type = type
+		// Custom values
+		if (a != null) row.a = a
+		if (b != null) row.b = b
+		if (c != null) row.c = c
+		if (d != null) row.d = d
+		if (e != null) row.e = e
+		rows += row
 		initialized = true
 	}
 
-	fun update(state: SimulationState, setting: SimulationSetting) {
+	fun update(state: SimulationState, setting: SimulationSetting, a:Double? = null, b: Double? = null, c: Double? = null, d: Double? = null, e: Double? = null) {
 		assert(initialized)
 		val currentRow = rows.last()
 		val (position, velocity, angle, restLength, length, springConstant, mass, radius, standPosition, flightVelocity, headPosition, controller) = state.slip
@@ -51,6 +58,12 @@ class Statistic() {
 		currentRow.endDistance = position.x
 		// increment the past time
 		currentRow.totalTime += setting.simulationStep
+		// Custom values
+		if (a != null) currentRow.a = a
+		if (b != null) currentRow.b = b
+		if (c != null) currentRow.c = c
+		if (d != null) currentRow.d = d
+		if (e != null) currentRow.e = e
 	}
 
 	fun finalize(state: SimulationState, setting: SimulationSetting) {
@@ -78,15 +91,20 @@ class Statistic() {
 		var minLength = slip.restLength
 		var collapsed = false
 		var endDistance = 0.0
+		var a = 0.0
+		var b = 0.0
+		var c = 0.0
+		var d = 0.0
+		var e = 0.0
 
 		fun toCSV(): String {
-			return "$type, $ia, $ik, $ix, $iy, $ivx, $ivy, $ir, $im, $il, $numberOfJumps, $totalTime, $maxDistance, $maxHeight, $maxVelocity, $maxAngle, $minLength, ${if(collapsed) 1 else 0}, $endDistance"
+			return "$type, $ia, $ik, $ix, $iy, $ivx, $ivy, $ir, $im, $il, $numberOfJumps, $totalTime, $maxDistance, $maxHeight, $maxVelocity, $maxAngle, $minLength, ${if(collapsed) 1 else 0}, $endDistance, $a, $b, $c, $d, $e"
 		}
 	}
 
 	fun toCSV(): String {
 		val builder = StringBuilder()
-		builder.appendln("type, initial angle, initial spring constant, initial x, initial y, initial vx, initial vy, initial radius, initial mass, initial length, number of jumps, total time, max distance, max height, max velocity, max angle, min length, collapsed, end distance")
+		builder.appendln("type, initial angle, initial spring constant, initial x, initial y, initial vx, initial vy, initial radius, initial mass, initial length, number of jumps, total time, max distance, max height, max velocity, max angle, min length, collapsed, end distance, a, b, c, d, e")
 		rows.forEach { builder.appendln(it.toCSV()) }
 		return builder.toString()
 	}

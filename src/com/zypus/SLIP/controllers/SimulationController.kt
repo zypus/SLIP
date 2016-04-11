@@ -165,7 +165,8 @@ class SimulationController2 {
 			else {
 				// Get the controller input and update angle but only if the spring remains above the ground.
 				if (v.y < 0) {
-					val na = a.lerp(c.control(state.slip) % PI, 0.2)
+					val control = min(max(-PI,c.control(state.slip)),PI)
+					val na = a.lerp(control, 1.0)
 					if (pos.y > cos(na) * (L + R) + Fg(pos.x - sin(na) * (L + R))) {
 						a = na
 					}

@@ -30,24 +30,44 @@ class SimulationView : View() {
 
 	init {
 
-		Platform.runLater {
-			// Setup simulation state.
-			val initial = Initial(position = Vector2(0, 210))
-			//		val slip = SLIP(initial).copy(controller = SpringController { 0.021 * -it.velocity.x + 0.01 })
-					val slip = SLIP(initial).copy(controller = SpringController { -0.02014512293491862 * it.velocity.x + 0.13381311880313776 })
-//			val slip = SLIP(initial)
-//			val slip = SLIP(initial).copy(controller = SpringEvolution().evolve())
-//					val environment = Environment(terrain = { 40.0+10*sin(0.1*it) })
+		var state: SimulationState? = null
+		val setting = SimulationSetting()
+
+		// Lengthy computation
+		// Setup simulation state.
+		Thread {
+			val initial = Initial(position = Vector2(0, 210), velocity = Vector2(0,0))
 			val environment = Environment(terrain = { 30.0 })
-			val setting = SimulationSetting()
-			var state = SimulationState(slip, environment)
+			//		val slip = SLIP(initial).copy(controller = SpringController { 0.021 * -it.velocity.x + 0.01 })
+								val slip = SLIP(initial).copy(controller = SpringController { -0.02014512293491862 * it.velocity.x + 0.13381311880313776 })
+//						val slip = SLIP(initial)
+//			val slip = SLIP(initial).copy(controller = SpringEvolution(initial, environment, setting).evolve())
+			//					val environment = Environment(terrain = { 40.0+10*sin(0.1*it) })
+			state = SimulationState(slip, environment)
+		}.start()
+
+		Platform.runLater {
 
 			val gc = canvas.graphicsContext2D
+			var dotCount = 0
+			var frames = 0
+			val textWidth = Text("Loading").layoutBounds.width
 
 			EventStreams.animationFrames()
 					.feedTo {
-						state = SimulationController2.step(state, setting)
-						gc.drawSimulationState(state)
+						if (state != null) {
+							state = SimulationController2.step(state!!, setting)
+							gc.drawSimulationState(state!!)
+						} else {
+							gc.clearRect(0.0, 0.0, canvas.width, canvas.height)
+							val s = "Loading${ (1..dotCount).map { "." }.joinToString(separator = "") }"
+							frames = ++frames%30
+							if (frames == 0) {
+								dotCount = ++dotCount%4
+							}
+							// Using the text element to get the actual string length once rendered
+							gc.fillText(s, canvas.width/2 - textWidth/2, canvas.height/2)
+						}
 					}
 		}
 
