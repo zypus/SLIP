@@ -1,19 +1,23 @@
 package com.zypus.SLIP.views
 
-import com.zypus.SLIP.controllers.SimulationController2
+import com.zypus.SLIP.algorithms.SpringEvolution2
+import com.zypus.SLIP.algorithms.SpringEvolution3
 import com.zypus.SLIP.models.*
+import com.zypus.gui.EvolutionFragment
 import com.zypus.utilities.Vector2
-import com.zypus.utilities.percent
+import impl.org.controlsfx.skin.DecorationPane
 import javafx.application.Platform
-import javafx.scene.canvas.Canvas
-import javafx.scene.canvas.GraphicsContext
+import javafx.geometry.Insets
+import javafx.geometry.Pos
+import javafx.scene.control.Label
+import javafx.scene.control.ProgressBar
+import javafx.scene.control.TabPane
+import javafx.scene.control.TextField
 import javafx.scene.layout.VBox
-import javafx.scene.paint.Color
-import javafx.scene.text.Text
-import org.reactfx.EventStreams
-import tornadofx.View
-import java.lang.Math.cos
-import java.lang.Math.sin
+import org.controlsfx.tools.ValueExtractor
+import org.controlsfx.validation.Severity
+import org.controlsfx.validation.ValidationSupport
+import tornadofx.*
 
 /**
  * View to render all simulation state relevant information.
@@ -25,214 +29,263 @@ import java.lang.Math.sin
 
 class SimulationView : View() {
 
-	val canvas = Canvas(500.0, 500.0)
-	override val root = VBox(canvas)
+	override val root = VBox()
 
 	init {
 
-		var state: SimulationState? = null
+		//		var state: SimulationState? = null
 		val setting = SimulationSetting()
+
+		val initial = Initial(position = Vector2(0, 210), velocity = Vector2(0, 0))
+		val environment = Environment(terrain = { 30 + 10 * Math.sin(0.1 * it) })
+
 
 		// Lengthy computation
 		// Setup simulation state.
-		Thread {
-			val initial = Initial(position = Vector2(0, 210), velocity = Vector2(0,0))
-			val environment = Environment(terrain = { 30.0 })
-			//		val slip = SLIP(initial).copy(controller = SpringController { 0.021 * -it.velocity.x + 0.01 })
-								val slip = SLIP(initial).copy(controller = SpringController { -0.02014512293491862 * it.velocity.x + 0.13381311880313776 })
-//						val slip = SLIP(initial)
-//			val slip = SLIP(initial).copy(controller = SpringEvolution(initial, environment, setting).evolve())
-			//					val environment = Environment(terrain = { 40.0+10*sin(0.1*it) })
-			state = SimulationState(slip, environment)
-		}.start()
+		//		Thread {
+		//
+		//			//		val slip = SLIP(initial).copy(controller = SpringController { 0.021 * -it.velocity.x + 0.01 })
+		//								val slip = SLIP(initial).copy(controller = SpringController { -0.02014512293491862 * it.velocity.x + 0.13381311880313776 })
+		////						val slip = SLIP(initial)
+		//
+		////			val slip = SLIP(initial).copy(controller = springEvolution2.evolve())
+		//			//					val environment = Environment(terrain = { 40.0+10*sin(0.1*it) })
+		//			state = SimulationState(slip, environment)
+		//
+		//			Platform.runLater { StateFragment(state!!, setting).openModal() }
+		//		}.apply { name = "evolution" }.start()
 
-		Platform.runLater {
 
-			val gc = canvas.graphicsContext2D
-			var dotCount = 0
-			var frames = 0
-			val textWidth = Text("Loading").layoutBounds.width
+		with(root) {
 
-			EventStreams.animationFrames()
-					.feedTo {
-						if (state != null) {
-							state = SimulationController2.step(state!!, setting)
-							gc.drawSimulationState(state!!)
-						} else {
-							gc.clearRect(0.0, 0.0, canvas.width, canvas.height)
-							val s = "Loading${ (1..dotCount).map { "." }.joinToString(separator = "") }"
-							frames = ++frames%30
-							if (frames == 0) {
-								dotCount = ++dotCount%4
+			val numberValidator = org.controlsfx.validation.Validator.createRegexValidator("Please enter a valid number!", "^-?\\d+(,\\d+)*(\\.\\d+(e\\d+)?)?$", Severity.ERROR)
+			ValueExtractor.addObservableValueExtractor({c -> c is Label}, {c -> (c as Label).textProperty()});
+
+			tabpane {
+				tabClosingPolicy = TabPane.TabClosingPolicy.UNAVAILABLE
+
+				/* MARK: UNCONTROLLED */
+
+				tab("Uncontrolled", DecorationPane()) {
+					val support = ValidationSupport()
+					vbox {
+						spacing = 10.0
+						padding = Insets(10.0)
+
+						hbox {
+							alignment = Pos.CENTER_LEFT
+							label("Angle")
+							textfield("0") {
+								id = "angle"
+								support.registerValidator(this, numberValidator)
 							}
-							// Using the text element to get the actual string length once rendered
-							gc.fillText(s, canvas.width/2 - textWidth/2, canvas.height/2)
+						}
+						button {
+							disableProperty().bind(support.invalidProperty())
+							text = "Deploy"
+							setOnAction {
+								val text = (parent.lookup("#angle") as TextField).text
+								val a = text.toDouble()
+								// Build the state.
+								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a, it.springConstant) })
+								val s = SimulationState(slip, environment)
+
+								// Set the controller for the viewer.
+								StateFragment(s, setting).openModal()
+							}
 						}
 					}
+				}
+
+				/* MARK: MINIMAL CONTROL */
+
+				tab("Minimal control", DecorationPane()) {
+					val support = ValidationSupport()
+					vbox {
+						spacing = 10.0
+						padding = Insets(10.0)
+						hbox {
+							alignment = Pos.CENTER_LEFT
+							textfield("-0.02014512293491862") {
+								id = "a"
+								support.registerValidator(this, numberValidator)
+							}
+							label("velocity.x + ")
+							textfield("0.13381311880313776") {
+								id = "b"
+								support.registerValidator(this, numberValidator)
+							}
+						}
+						button {
+							disableProperty().bind(support.invalidProperty())
+							text = "Deploy"
+							setOnAction {
+								val text1 = (parent.lookup("#a") as TextField).text
+								val text2 = (parent.lookup("#b") as TextField).text
+								val a = text1.toDouble()
+								val b = text2.toDouble()
+								// Build the state.
+								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b, it.springConstant) })
+								val s = SimulationState(slip, environment)
+
+								// Set the controller for the viewer.
+								StateFragment(s, setting).openModal()
+							}
+						}
+					}
+				}
+
+				/* MARK: EVOLUTION (a*vx+b, k)*/
+
+				tab("Minimal evolution", DecorationPane()) {
+					val support = ValidationSupport()
+					vbox {
+						spacing = 10.0
+						padding = Insets(10.0)
+						button("Evolve") {
+							setOnAction {
+								val springEvolution2 = SpringEvolution2(initial, environment, setting)
+								EvolutionFragment(springEvolution2, { this.behavior.values.sumByDouble { it as Double } }).openModal()
+								Thread {
+									val evolve = springEvolution2.evolve()
+									Platform.runLater {
+										(parent.lookup("#a") as Label).text = "${evolve.genotype[0]}"
+										(parent.lookup("#b") as Label).text = "${evolve.genotype[1]}"
+									}
+								}.start()
+							}
+						}
+						hbox {
+							alignment = Pos.CENTER_LEFT
+							label("a") {
+								style = "-fx-font-weight: bold;"
+								id = "a"
+								support.registerValidator(this, numberValidator)
+							}
+							label(" velocity.x + ")
+							label("b") {
+								style = "-fx-font-weight: bold;"
+								id = "b"
+								support.registerValidator(this, numberValidator)
+							}
+						}
+						button {
+							disableProperty().bind(support.invalidProperty())
+							text = "Deploy"
+							setOnAction {
+								val text1 = (parent.lookup("#a") as Label).text
+								val text2 = (parent.lookup("#b") as Label).text
+								val a = text1.toDouble()
+								val b = text2.toDouble()
+								// Build the state.
+								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b,it.springConstant) })
+								val s = SimulationState(slip, environment)
+
+								// Set the controller for the viewer.
+								StateFragment(s, setting).openModal()
+							}
+						}
+					}
+				}
+
+				/* MARK: EVOLUTION (a*vx+b, c*k+d)*/
+
+				tab("Basic evolution", DecorationPane()) {
+					val support = ValidationSupport()
+					vbox {
+						spacing = 10.0
+						padding = Insets(10.0)
+						hbox {
+							spacing = 10.0
+							alignment = Pos.CENTER
+							var evolutionFragment: EvolutionFragment? = null
+							var thread: Thread? = null
+							val evolve = button("Evolve") {
+								setOnAction {
+									if (text == "Evolve") {
+										text = "Stop"
+										val springEvolution3 = SpringEvolution3(initial, environment, setting)
+										val progress = (parent.lookup("#progress") as ProgressBar)
+										progress.progressProperty().bind(springEvolution3.progressProperty())
+										evolutionFragment = EvolutionFragment(springEvolution3, { this.behavior.values.sumByDouble { it as Double } })
+										thread = Thread {
+											val evolve = springEvolution3.evolve()
+											Platform.runLater {
+												(parent.parent.lookup("#a") as Label).text = "${evolve.genotype[0]}"
+												(parent.parent.lookup("#b") as Label).text = "${evolve.genotype[1]}"
+												(parent.parent.lookup("#c") as Label).text = "${evolve.genotype[2]}"
+												(parent.parent.lookup("#d") as Label).text = "${evolve.genotype[3]}"
+												text = "Evolve"
+											}
+										}
+										thread?.start()
+									} else {
+										thread?.interrupt()
+									}
+								}
+							}
+							progressBar {
+								id = "progress"
+								visibleProperty().bind(evolve.textProperty().isEqualTo("Stop"))
+							}
+							button("Show") {
+								visibleProperty().bind(evolve.textProperty().isEqualTo("Stop"))
+								setOnAction {
+									evolutionFragment?.openModal()
+								}
+							}
+						}
+
+						hbox {
+							alignment = Pos.CENTER_LEFT
+							label("a") {
+								style = "-fx-font-weight: bold;"
+								id = "a"
+								support.registerValidator(this, numberValidator)
+							}
+							label(" velocity.x + ")
+							label("b") {
+								style = "-fx-font-weight: bold;"
+								id = "b"
+								support.registerValidator(this, numberValidator)
+							}
+
+							label(" , ")
+							label("c") {
+								style = "-fx-font-weight: bold;"
+								id = "c"
+								support.registerValidator(this, numberValidator)
+							}
+							label(" compression + ")
+							label("d") {
+								style = "-fx-font-weight: bold;"
+								id = "d"
+								support.registerValidator(this, numberValidator)
+							}
+						}
+						button {
+							disableProperty().bind(support.invalidProperty())
+							text = "Deploy"
+							setOnAction {
+								val text1 = (parent.lookup("#a") as Label).text
+								val text2 = (parent.lookup("#b") as Label).text
+								val a = text1.toDouble()
+								val b = text2.toDouble()
+								// Build the state.
+								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b, it.springConstant) })
+								val s = SimulationState(slip, environment)
+
+								// Set the controller for the viewer.
+								StateFragment(s, setting).openModal()
+							}
+						}
+					}
+				}
+
+			}
+
 		}
 
-	}
-
-	/**
-	 * Draws the state (spring and terrain). Also renders a distance representation [drawMarkers]
-	 *
-	 * @param state The current simulation state.
-	 */
-	fun GraphicsContext.drawSimulationState(state: SimulationState) {
-		// Clear the context.
-		clearRect(0.0, 0.0, canvas.width, canvas.height)
-
-		// Extract the state information.
-		val (position, velocity, angle, restLength, length, springConstant, mass, radius, standPosition, flightVelocity, headPosition) = state.slip
-		val (x, y) = position
-		val (gravity, terrain) = state.environment
-
-		// Shift the viewport to be centered on the slip.
-		save()
-		scale(1.0, -1.0)
-		translate(canvas.width / 2 - x, -canvas.height)
-
-		// Set line attributes.
-		lineWidth = 1.0
-		stroke = Color.BLACK
-
-		// Draw the terrain.
-		val start = x - canvas.width / 2
-		val end = x + canvas.width / 2
-		drawTerrain(start, end, 500, terrain)
-
-		// Draw slip.
-		// Draw the mass.
-		strokeOval(x - radius, y - radius, 2 * radius, 2 * radius)
-
-		// Draw spring.
-		drawSpring(x - sin(angle) * radius, y - cos(angle) * radius, angle, length, restLength, 6, 10.percent)
-
-		// Restore the original state.
-		restore()
-
-		// Draw markers.
-		drawMarkers(start, end, canvas.width / 2 - x, 50, 10, 6.0, 3.0)
-
-		// Draw Info.
-		drawStateInfo(state)
-	}
-
-	/**
-	 * Uses the provided spring information and render hints to render a semi realistic 2d spring.
-	 *
-	 * @param xs Starting x coordinate of the spring.
-	 * @param ys Starting y coordinate of the spring.
-	 * @param angle Angle of the spring.
-	 * @param ls Current length of the spring.
-	 * @param Ls Length of the spring in rest position.
-	 *
-	 * @param segs Number of spring segments to be rendered.
-	 * @param fixedPercentage Percentage of the spring at start and end of the spring which will be stiff.
-	 */
-	fun GraphicsContext.drawSpring(xs: Double, ys: Double, angle: Double, ls: Double, Ls: Double, segs: Int, fixedPercentage: Double) {
-		var l = ls
-		// Cap spring length.
-		if (ls > Ls) {
-			l = Ls
-		}
-		beginPath()
-		// Draw the anchor.
-		moveTo(xs, ys)
-		lineTo(xs - sin(angle) * Ls * fixedPercentage, ys - cos(angle) * Ls * fixedPercentage)
-		// Spring range.
-		val Rs = Ls * (1 - 2 * fixedPercentage)
-		val rs = l - Ls * 2 * fixedPercentage
-		// Compute compression.
-		val comp = rs / Rs
-		// Compute the delta.
-		val dSeg = rs / segs
-		// Draw the spring segements.
-		for (i in 0..segs - 1) {
-			val dir = if (i % 2 == 0) 1 else -1
-			val dy = dir * 0.5 * (dSeg / comp)
-			//val dy = dir * 0.5 * sqrt(pow(Rs/segs,2)+pow(0.5*rs/segs,2));
-			val nx = xs - sin(angle) * (Ls * fixedPercentage + (0.5 + i) * dSeg) + cos(angle) * dy
-			val ny = ys - cos(angle) * (Ls * fixedPercentage + (0.5 + i) * dSeg) - sin(angle) * dy
-			lineTo(nx, ny);
-		}
-		lineTo(xs - sin(angle) * (Ls * fixedPercentage + rs), ys - cos(angle) * (Ls * fixedPercentage + rs))
-		// Draw the tip.
-		lineTo(xs - sin(angle) * l, ys - cos(angle) * l)
-		// Stroke path.
-		stroke()
-	}
-
-	/**
-	 * Uses the terrain x -> y mapping and renders a sequence of lines.
-	 *
-	 * @param start Left most visible x coordinate.
-	 * @param end Right most visible y coordinate.
-	 * @param steps Resolution of the terrain.
-	 * @param terrain Function which maps x to y coordinates, which are interpreted as terrain.
-	 */
-	fun GraphicsContext.drawTerrain(start: Double, end: Double, steps: Int, terrain: (Double) -> Double) {
-		// Compute the size of each step.
-		val stepSize = (end - start) / steps
-		beginPath()
-		moveTo(start, terrain(start))
-		// Fill in all line segments.
-		for (i in 0..steps) {
-			val x = start + stepSize * i
-			lineTo(x, terrain(x))
-		}
-		// Draw the terrain.
-		stroke()
-	}
-
-	/**
-	 * Draws a vertical bar, with major and minor ticks, where the major ticks are labeled to represent the distance from the origin.
-	 * Function must called in untransformed state, because inversion of the y axis makes it kinda difficult to draw text *not* upside down.
-	 *
-	 * @param start Left most visible x coordinate.
-	 * @param end Right most visible y coordinate.
-	 * @param offset X offset to position markers in view.
-	 * @param major Distance between major ticks.
-	 * @param minor Distance between minor ticks.
-	 * @param majorHeight Height of the major ticks.
-	 * @param minorHeight Height of the minor ticks.
-	 */
-	fun GraphicsContext.drawMarkers(start: Double, end: Double, offset: Double, major: Int, minor: Int, majorHeight: Double = 6.0, minorHeight: Double = 3.0) {
-		var majors = start - start % major - major
-		var minors = start - start % minor
-
-		// Draw minors
-		while (minors < end) {
-			strokeLine(minors + offset, canvas.height - font.size, minors + offset, canvas.height - minorHeight - font.size)
-			minors += minor
-		}
-
-		// Draw majors.
-		while (majors < end + major) {
-			strokeLine(majors + offset, canvas.height - font.size, majors + offset, canvas.height - majorHeight - font.size)
-			val s = "${majors.toInt()}"
-			// Using the text element to get the actual string length once rendered
-			val textWidth = Text(s).layoutBounds.width
-			fillText(s, majors + offset - textWidth / 2, canvas.height - 2.0)
-			majors += major
-		}
-	}
-
-	fun GraphicsContext.drawStateInfo(state: SimulationState) {
-		val slip = state.slip
-		// E_pot = m * g * h
-		val potentialEnergy = slip.mass * -state.environment.gravity.y * (slip.position.y-slip.radius-state.environment.terrain(slip.position.y))
-		// E_kin = 0.5 * m * v^2
-		val kineticEnergy = 0.5 * slip.mass * slip.velocity.norm2
-		// E_ela = 0.5 * k * dl^2
-		val elasticEnergy = 0.5 * slip.springConstant * Math.pow(slip.restLength-slip.length,2.0)
-		val totalEnergy = potentialEnergy+kineticEnergy+elasticEnergy
-		var i = 0
-		fillText("Potential Energy: ${(potentialEnergy*100).toInt()/100.0}", 10.0, 20.0 * ++i)
-		fillText("Kinetic Energy  : ${(kineticEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
-		fillText("Elastic Energy  : ${(elasticEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
-		fillText("------------------------", 10.0, 20.0 * ++i)
-		fillText("Total Energy    : ${(totalEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
 	}
 
 

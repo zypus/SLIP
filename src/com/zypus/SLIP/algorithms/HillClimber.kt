@@ -32,10 +32,10 @@ class HillClimber : SpringControllerProvider {
 				val left2 = f2 - step2 * Math.random()
 				val right1 = f1 + step1 * Math.random()
 				val right2 = f2 + step2 * Math.random()
-				val slip1 = SLIP(initial).copy(controller = SpringController { left1 * it.velocity.x + left2 })
-				val slip2 = SLIP(initial).copy(controller = SpringController { right1 * it.velocity.x + right2 })
-				val slip3 = SLIP(initial).copy(controller = SpringController { right1 * it.velocity.x + left2 })
-				val slip4 = SLIP(initial).copy(controller = SpringController { left1 * it.velocity.x + right2 })
+				val slip1 = SLIP(initial).copy(controller = SpringController { SpringControl(left1 * it.velocity.x + left2, it.springConstant) })
+				val slip2 = SLIP(initial).copy(controller = SpringController { SpringControl(right1 * it.velocity.x + right2, it.springConstant) })
+				val slip3 = SLIP(initial).copy(controller = SpringController { SpringControl(right1 * it.velocity.x + left2, it.springConstant) })
+				val slip4 = SLIP(initial).copy(controller = SpringController { SpringControl(left1 * it.velocity.x + right2, it.springConstant) })
 //				val environment = Environment(terrain = { 30.0 })
 							val environment = Environment(terrain = { 40.0 + 20 * Math.sin(0.1 * it) })
 				var state1 = SimulationState(slip1, environment)
@@ -85,7 +85,7 @@ class HillClimber : SpringControllerProvider {
 			}
 		}
 		println("Best factor: $factor1, $factor2")
-		return SpringController { factor1 * it.velocity.x + factor2 }
+		return SpringController { SpringControl(factor1 * it.velocity.x + factor2, it.springConstant) }
 	}
 
 	// parameters to control - range

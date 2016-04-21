@@ -15,7 +15,7 @@ import java.lang.Math.*
  */
 
 fun Statistic.Row.init(state: SimulationState, setting: SimulationSetting) {
-	val (position, velocity, angle, restLength, length, springConstant, mass, radius, standPosition, flightVelocity, headPosition, controller) = state.slip
+	val (position, velocity, angle, restLength, length, springConstant, mass, radius, standPosition, controller) = state.slip
 	this["initial x"] = position.x
 	this["initial y"] = position.y
 	this["initial vx"] = velocity.x
@@ -27,7 +27,7 @@ fun Statistic.Row.init(state: SimulationState, setting: SimulationSetting) {
 }
 
 fun Statistic.Row.update(state: SimulationState, setting: SimulationSetting) {
-	val (position, velocity, angle, restLength, length, springConstant, mass, radius, standPosition, flightVelocity, headPosition, controller) = state.slip
+	val (position, velocity, angle, restLength, length, springConstant, mass, radius, standPosition, controller) = state.slip
 	// determine if a jump was completed
 	if (boolean("_compressed") ?: false && restLength == length) {
 		this["_compressed"] = false

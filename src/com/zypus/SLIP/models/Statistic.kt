@@ -1,5 +1,7 @@
 package com.zypus.SLIP.models
 
+import java.io.File
+
 
 /**
  * TODO Add description
@@ -55,6 +57,16 @@ class Statistic(vararg titles: String) {
 			}
 		}) }
 		return builder.toString()
+	}
+
+	fun writeToFile(fileName: String) {
+		val file = File(fileName)
+		// Override any existing file.
+		file.delete()
+		val writer = file.printWriter()
+		writer.print(toCSV())
+		writer.flush()
+		writer.close()
 	}
 
 }

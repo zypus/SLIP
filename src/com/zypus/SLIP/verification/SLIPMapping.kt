@@ -25,7 +25,7 @@ fun main(args: Array<String>) {
 
 	for (a in 0.rangeTo(angleStep).map { it.toDouble() / angleStep * Math.PI - Math.PI/2 }) {
 		for (b in 0.rangeTo(constantStep).map { it.toDouble() / constantStep * constantStepSize - constantStepSize.toDouble()/2 }) {
-			val slip = SLIP(position = Vector2(0, 210), velocity = Vector2(0, 0), controller = SpringController { a*it.velocity.x+b })
+			val slip = SLIP(position = Vector2(0, 210), velocity = Vector2(0, 0), controller = SpringController { SpringControl(a*it.velocity.x+b, it.springConstant) })
 			var state = SimulationState(slip, environment)
 			// initialize new statistic recording
 			val row = statistic.newRow().apply {
