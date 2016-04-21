@@ -4,6 +4,7 @@ import com.zypus.SLIP.algorithms.genetic.*
 import com.zypus.SLIP.algorithms.genetic.builder.evolution
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
+import com.zypus.SLIP.models.terrain.SinusTerrain
 import tornadofx.getProperty
 import tornadofx.property
 import java.util.*
@@ -104,7 +105,7 @@ class SpringEvolution2(val initial: Initial, val environment: Environment, val s
 
 			initialize = { random.nextDouble() }
 
-			mapping = { gen -> Environment { 30 + 10 * Math.sin(gen * it) } }
+			mapping = { gen -> Environment (terrain = SinusTerrain(gen, 10.0, 0.0, 30.0)) }
 
 		}
 
@@ -151,11 +152,11 @@ class SpringEvolution2(val initial: Initial, val environment: Environment, val s
 		for (g in 0..maxGenerations-1) {
 			evolutionRule.matchAndEvaluate(state)
 
-			stats.newRow().let {
-				it["generation"] = g
-				state.solutions.forEachIndexed { i, entity -> it["s$i"] = entity.behavior.values.sum() }
-				state.problems.forEachIndexed { i, entity -> it["p$i"] = entity.behavior.values.sum() }
-			}
+//			stats.newRow().let {
+//				it["generation"] = g
+//				state.solutions.forEachIndexed { i, entity -> it["s$i"] = entity.behavior.values.sum() }
+//				state.problems.forEachIndexed { i, entity -> it["p$i"] = entity.behavior.values.sum() }
+//			}
 
 			solutions = state.solutions
 

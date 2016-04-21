@@ -3,12 +3,17 @@ package com.zypus.SLIP.views
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.SimulationSetting
 import com.zypus.SLIP.models.SimulationState
+import com.zypus.SLIP.models.terrain.CompositeTerrain
+import com.zypus.SLIP.models.terrain.FlatTerrain
+import com.zypus.SLIP.models.terrain.SinusTerrain
+import com.zypus.SLIP.models.terrain.Terrain
+import com.zypus.gui.ResizableCanvas
 import com.zypus.utilities.percent
+import javafx.collections.ObservableList
 import javafx.event.ActionEvent
 import javafx.geometry.Insets
 import javafx.geometry.Pos
 import javafx.scene.Node
-import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
@@ -26,15 +31,15 @@ import tornadofx.*
  * @created 14/04/16
  */
 
-fun Node.actionEvents() = EventStreams.eventsOf(this, ActionEvent.ACTION)
+class StateFragment(var state: SimulationState, setting: SimulationSetting) : Fragment() {
 
-class StateFragment(var state: SimulationState, setting: SimulationSetting): Fragment() {
-
-	val canvas = Canvas(500.0, 500.0)
+	val canvas = ResizableCanvas(500.0, 400.0)
 	override val root = VBox()
 
 	var play by property(false)
 	fun playProperty() = getProperty(StateFragment::play)
+
+	fun Node.actionEvents() = EventStreams.eventsOf(this, ActionEvent.ACTION)
 
 	init {
 		val gc = canvas.graphicsContext2D
@@ -46,6 +51,7 @@ class StateFragment(var state: SimulationState, setting: SimulationSetting): Fra
 			spacing = 10.0
 			hbox {
 				alignment = Pos.CENTER
+				spacing = 10.0
 				button {
 					textProperty().bindBidirectional(playProperty(), object : StringConverter<Boolean>() {
 						override fun toString(b: Boolean): String = if (b) "Pause" else "Play"
@@ -54,42 +60,97 @@ class StateFragment(var state: SimulationState, setting: SimulationSetting): Fra
 					})
 					setOnAction { play = !play }
 				}
-			}
-			add(Borders.wrap(canvas).lineBorder().color(Color.BLACK).innerPadding(0.0).buildAll())
-			hbox {
-				alignment = Pos.CENTER
-				label("Frequency")
-				val tf = textfield {
-					text = "0.1"
-				}
-				label("Amplitude")
-				val amp = textfield {
-					text = "10.0"
-				}
-
-				button("Reset").setOnAction {
-					s = state
-					tf.text = "0.1"
-					amp.text = "10.0"
-					gc.drawSimulationState(s)
-				}
-
-				EventStreams.merge(tf.actionEvents(), amp.actionEvents()).feedTo {
-					try {
-						val d = tf.text.toDouble()
-						val a = amp.text.toDouble()
-						s = s.copy(environment = s.environment.copy(terrain = { 30.0 + a * Math.sin(d * it) }))
+				button("Reset") {
+					setOnAction {
+						play = false
+						s = state
 						gc.drawSimulationState(s)
 					}
-					catch(e: NumberFormatException) {}
 				}
 			}
+
+			/* MARK: Canvas */
+			val borderedCanvas = Borders.wrap(canvas).lineBorder().color(Color.BLACK).innerPadding(0.0).buildAll()
+			EventStreams.valuesOf(borderedCanvas.boundsInLocalProperty()).feedTo {
+				canvas.resize(root.width-20, canvas.height)
+				gc.drawSimulationState(s)
+			}
+			add(borderedCanvas)
+
+			/* MARK: Terrain */
+
+			val terrain: ObservableList<Terrain> = arrayListOf<Terrain>(FlatTerrain(30.0)).observable()
+
+			EventStreams.changesOf(terrain).feedTo {
+				val compositeTerrain = CompositeTerrain(*terrain.toTypedArray())
+				s = s.copy(environment = s.environment.copy(terrain = compositeTerrain))
+				state = state.copy(environment = state.environment.copy(terrain = compositeTerrain))
+				gc.drawSimulationState(s)
+			}
+
+			val sinus = vbox {
+				spacing = 10.0
+				hbox {
+					alignment = Pos.CENTER_LEFT
+					spacing = 10.0
+					label("Height")
+					val h = textfield { text = "30.0" }
+					h.actionEvents().feedTo {
+						val i = parent.childrenUnmodifiable.indexOf(this)
+						try {
+							val height = h.text.toDouble()
+							terrain[i] = FlatTerrain(height)
+						}
+						catch(e: NumberFormatException) {
+						}
+					}
+				}
+			}
+			val add = button("Add") {
+				setOnAction {
+					terrain.add(SinusTerrain(frequency = 0.1, shift = 0.0, amplitude = 10.0))
+					sinus.apply {
+						hbox {
+							alignment = Pos.CENTER
+							spacing = 10.0
+							label("Frequency")
+							val freq = textfield { text = "0.1" }
+							label("Shift")
+							val shift = textfield { text = "0.0" }
+							label("Amplitude")
+							val amp = textfield { text = "10.0" }
+
+							button("Remove") {
+								setOnAction {
+									val container = parent.parent
+									val i = container.childrenUnmodifiable.indexOf(parent)
+									terrain.removeAt(i)
+									(container as VBox).children.removeAt(i)
+								}
+							}
+
+							EventStreams.merge(freq.actionEvents(), shift.actionEvents(), amp.actionEvents()).feedTo {
+								val i = parent.childrenUnmodifiable.indexOf(this)
+								try {
+									val f = freq.text.toDouble()
+									val sh = shift.text.toDouble()
+									val a = amp.text.toDouble()
+									terrain[i] = SinusTerrain(frequency = f, shift = sh, amplitude = a)
+								}
+								catch(e: NumberFormatException) {
+								}
+							}
+						}
+					}
+				}
+			}
+			add.fire()
 		}
 		EventStreams.animationFrames().filter { play }
 				.feedTo {
-						s = SimulationController.step(s, setting)
-						gc.drawSimulationState(s)
-					}
+					s = SimulationController.step(s, setting)
+					gc.drawSimulationState(s)
+				}
 	}
 
 	fun changeState(s: SimulationState) {
@@ -194,7 +255,7 @@ class StateFragment(var state: SimulationState, setting: SimulationSetting): Fra
 	 * @param steps Resolution of the terrain.
 	 * @param terrain Function which maps x to y coordinates, which are interpreted as terrain.
 	 */
-	fun GraphicsContext.drawTerrain(start: Double, end: Double, steps: Int, terrain: (Double) -> Double) {
+	fun GraphicsContext.drawTerrain(start: Double, end: Double, steps: Int, terrain: Terrain) {
 		// Compute the size of each step.
 		val stepSize = (end - start) / steps
 		beginPath()
@@ -242,20 +303,20 @@ class StateFragment(var state: SimulationState, setting: SimulationSetting): Fra
 	}
 
 	fun GraphicsContext.drawStateInfo(state: SimulationState) {
-//		val slip = state.slip
-//		// E_pot = m * g * h
-//		val potentialEnergy = slip.mass * -state.environment.gravity.y * (slip.position.y - slip.radius - state.environment.terrain(slip.position.y))
-//		// E_kin = 0.5 * m * v^2
-//		val kineticEnergy = 0.5 * slip.mass * slip.velocity.norm2
-//		// E_ela = 0.5 * k * dl^2
-//		val elasticEnergy = 0.5 * slip.springConstant * Math.pow(slip.restLength - slip.length, 2.0)
-//		val totalEnergy = potentialEnergy + kineticEnergy + elasticEnergy
-//		var i = 0
-//		fillText("Potential Energy: ${(potentialEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
-//		fillText("Kinetic Energy  : ${(kineticEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
-//		fillText("Elastic Energy  : ${(elasticEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
-//		fillText("------------------------", 10.0, 20.0 * ++i)
-//		fillText("Total Energy    : ${(totalEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
+		//		val slip = state.slip
+		//		// E_pot = m * g * h
+		//		val potentialEnergy = slip.mass * -state.environment.gravity.y * (slip.position.y - slip.radius - state.environment.terrain(slip.position.y))
+		//		// E_kin = 0.5 * m * v^2
+		//		val kineticEnergy = 0.5 * slip.mass * slip.velocity.norm2
+		//		// E_ela = 0.5 * k * dl^2
+		//		val elasticEnergy = 0.5 * slip.springConstant * Math.pow(slip.restLength - slip.length, 2.0)
+		//		val totalEnergy = potentialEnergy + kineticEnergy + elasticEnergy
+		//		var i = 0
+		//		fillText("Potential Energy: ${(potentialEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
+		//		fillText("Kinetic Energy  : ${(kineticEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
+		//		fillText("Elastic Energy  : ${(elasticEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
+		//		fillText("------------------------", 10.0, 20.0 * ++i)
+		//		fillText("Total Energy    : ${(totalEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
 	}
 
 }

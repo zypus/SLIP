@@ -2,6 +2,7 @@ package com.zypus.SLIP.algorithms
 
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
+import com.zypus.SLIP.models.terrain.SinusTerrain
 import com.zypus.utilities.Vector2
 
 /**
@@ -37,7 +38,7 @@ class HillClimber : SpringControllerProvider {
 				val slip3 = SLIP(initial).copy(controller = SpringController { SpringControl(right1 * it.velocity.x + left2, it.springConstant) })
 				val slip4 = SLIP(initial).copy(controller = SpringController { SpringControl(left1 * it.velocity.x + right2, it.springConstant) })
 //				val environment = Environment(terrain = { 30.0 })
-							val environment = Environment(terrain = { 40.0 + 20 * Math.sin(0.1 * it) })
+							val environment = Environment(terrain = SinusTerrain(0.1,20.0,0.0,40.0))
 				var state1 = SimulationState(slip1, environment)
 				var state2 = SimulationState(slip2, environment)
 				var state3 = SimulationState(slip3, environment)

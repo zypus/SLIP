@@ -4,7 +4,7 @@ import com.zypus.SLIP.algorithms.genetic.*
 import com.zypus.SLIP.algorithms.genetic.builder.evolution
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
-import com.zypus.utilities.pickRandom
+import com.zypus.SLIP.models.terrain.SinusTerrain
 import tornadofx.getProperty
 import tornadofx.property
 import java.util.*
@@ -23,11 +23,11 @@ class SpringEvolution3(val initial: Initial, val environment: Environment, val s
 	var progress by property(0.0)
 	override fun progressProperty() = getProperty(SpringEvolution2::progress)
 
-	val evolutionRule = evolution<List<Double>, SpringController, Double, Double, Environment, Double> {
+	val evolutionRule = evolution<List<Double>, SpringController, Double, List<Double>, Environment, Double> {
 
 		val random = Random()
 
-		val bounds = arrayListOf(-0.5 to 0.5, -0.5 to 0.5, 0.1 to 1.0, 0.1 to 5.0)
+		val solutionBounds = arrayListOf(-0.5 to 0.5, -0.5 to 0.5, 0.1 to 1.0, 0.1 to 5.0)
 
 		val resolveBound = fun(bound: Pair<Double, Double>): Double {
 			return if (bound.first == Double.NEGATIVE_INFINITY && bound.second == Double.POSITIVE_INFINITY) {
@@ -38,19 +38,15 @@ class SpringEvolution3(val initial: Initial, val environment: Environment, val s
 			}
 		}
 
+		/* MARK: Solution */
+
 		// Model of the spring controller: controller controls the angle of the spring while in flight phase and controls the spring constant in stance phase.
 		solution = {
 
 			initialize = {
 				(1..4).mapIndexed { i, v ->
 					// Either use the bound that is provided for the index, or use first bound (assumed to be the bound for all indices)
-					val bound = if (bounds.size > i) {
-						bounds[i]
-					}
-					else {
-						bounds[0]
-					}
-					resolveBound(bound)
+					resolveBound(solutionBounds.getOrElse(i){solutionBounds[0]})
 				}
 			}
 
@@ -67,11 +63,11 @@ class SpringEvolution3(val initial: Initial, val environment: Environment, val s
 				val crossover = mother.crossover(father, 1.0)
 				crossover.mutate(1.0) {
 					i, e ->
-					val bound = if (bounds.size > i) {
-						bounds[i]
+					val bound = if (solutionBounds.size > i) {
+						solutionBounds[i]
 					}
 					else {
-						bounds[0]
+						solutionBounds[0]
 					}
 					when (random.nextDouble()) {
 					// decrease/increase the value a bit
@@ -88,7 +84,7 @@ class SpringEvolution3(val initial: Initial, val environment: Environment, val s
 					//						in 0.7..0.8 -> {
 					//							Math.max(bound.first ,Math.min(e * 110.percent, bound.second))
 					//						}
-					// assign a new random value, which is in the bounds
+					// assign a new random value, which is in the solutionBounds
 						else        -> {
 							resolveBound(bound)
 						}
@@ -100,19 +96,29 @@ class SpringEvolution3(val initial: Initial, val environment: Environment, val s
 
 		//		singularProblem = environment
 
+		/* MARK: Problem */
+
+		val problemBounds = arrayListOf(0.001 to 0.3)
+
 		problem = {
 
-			initialize = { random.nextDouble() }
+			initialize = {
+				(1..1).mapIndexed { i, v ->
+					// Either use the bound that is provided for the index, or use first bound (assumed to be the bound for all indices)
+					resolveBound(solutionBounds.getOrElse(i) { problemBounds[0] })
+				}}
 
-			mapping = { gen -> Environment { 30 + 10 * Math.sin(gen * it) } }
+			mapping = { gen -> Environment(terrain = SinusTerrain(gen[0], 10.0, 0.0, 30.0)) }
 
 		}
+
+		/* MARK: Evaluation */
 
 		test = {
 
 			match = {
 				evolutionState ->
-				val flatMap = evolutionState.solutions.flatMap { s -> arrayListOf(s to evolutionState.problems.pickRandom()) }
+				val flatMap = evolutionState.solutions.flatMap { s -> evolutionState.problems.map { s to it } }
 				flatMap
 			}
 
@@ -134,7 +140,7 @@ class SpringEvolution3(val initial: Initial, val environment: Environment, val s
 	fun evolve(): Entity<List<Double>, SpringController, Double> {
 		// Population settings.
 		val solutionCount = 50
-		val problemCount = 5
+		val problemCount = 1
 
 		// Evolution settings.
 		val maxGenerations = 100

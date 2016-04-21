@@ -3,6 +3,7 @@ package com.zypus.SLIP.views
 import com.zypus.SLIP.algorithms.SpringEvolution2
 import com.zypus.SLIP.algorithms.SpringEvolution3
 import com.zypus.SLIP.models.*
+import com.zypus.SLIP.models.terrain.SinusTerrain
 import com.zypus.gui.EvolutionFragment
 import com.zypus.utilities.Vector2
 import impl.org.controlsfx.skin.DecorationPane
@@ -37,7 +38,7 @@ class SimulationView : View() {
 		val setting = SimulationSetting()
 
 		val initial = Initial(position = Vector2(0, 210), velocity = Vector2(0, 0))
-		val environment = Environment(terrain = { 30 + 10 * Math.sin(0.1 * it) })
+		val environment = Environment(terrain = SinusTerrain(frequency = 0.1, shift = 0.0, amplitude = 10.0, height = 30.0))
 
 
 		// Lengthy computation
