@@ -1,9 +1,10 @@
 package com.zypus.SLIP.verification
 
-import com.zypus.SLIP.models.SimulationSetting
-import com.zypus.SLIP.models.SimulationState
-import com.zypus.SLIP.models.Statistic
+import com.zypus.SLIP.controllers.SimulationController
+import com.zypus.SLIP.models.*
+import com.zypus.utilities.Vector2
 import java.lang.Math.*
+import kotlin.system.measureTimeMillis
 
 
 /**
@@ -52,3 +53,13 @@ fun Statistic.Row.update(state: SimulationState, setting: SimulationSetting) {
 	this["total time"] = double("total time")?:0.0 + setting.simulationStep
 }
 
+fun main(args: Array<String>) {
+	var state = SimulationState(SLIP(position = Vector2(210, 0)), Environment())
+	val setting = SimulationSetting()
+	val millis = measureTimeMillis {
+		for (i in 1..10000) {
+			state = SimulationController.step(state, setting)
+		}
+	}
+	println(millis)
+}
