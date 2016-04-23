@@ -41,11 +41,34 @@ class EvolutionRules<SG : Any, SP : Any, SB : Any, PG : Any, PP : Any, PB : Any>
 
 	fun matchAndEvaluate(evolutionState: EvolutionState<SG, SP, SB, PG, PP, PB>) {
 		val matches = tester.matching(evolutionState)
-		matches.map { tester.evaluation(it.first.phenotype, it.second.phenotype) }.zip(matches).forEach {
-			val (behaviour, match) = it
-			match.first.behavior[match.second.genotype] = behaviour.first
-			match.second.behavior[match.first.genotype] = behaviour.second
+		val processors = Runtime.getRuntime().availableProcessors()
+		val subtaskSize = matches.size/processors
+		(1..processors).map {
+			val subtask = if (it == processors) {
+				matches.subList((it-1)*subtaskSize, matches.size-1)
+			}
+			else {
+				matches.subList((it-1)*subtaskSize, it*subtaskSize)
+			}
+			val task = Thread {
+				subtask.map { tester.evaluation(it.first.phenotype, it.second.phenotype) }.zip(subtask).forEach {
+					val (behaviour, match) = it
+					match.first.behavior[match.second.genotype] = behaviour.first
+					match.second.behavior[match.first.genotype] = behaviour.second
+				}
+			}
+			task.start()
+			task
+		}.forEach {
+			try {
+				it.join()
+			} catch (e: InterruptedException) {}
 		}
+//		matches.map { tester.evaluation(it.first.phenotype, it.second.phenotype) }.zip(matches).forEach {
+//			val (behaviour, match) = it
+//			match.first.behavior[match.second.genotype] = behaviour.first
+//			match.second.behavior[match.first.genotype] = behaviour.second
+//		}
 	}
 
 	fun selectAndReproduce(evolutionState: EvolutionState<SG, SP, SB, PG, PP, PB>): EvolutionState<SG, SP, SB, PG, PP, PB> {

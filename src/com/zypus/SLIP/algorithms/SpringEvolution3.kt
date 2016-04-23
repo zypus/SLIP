@@ -140,7 +140,7 @@ class SpringEvolution3(val initial: Initial, val environment: Environment, val s
 	fun evolve(): Entity<List<Double>, SpringController, Double> {
 		// Population settings.
 		val solutionCount = 50
-		val problemCount = 1
+		val problemCount = 5
 
 		// Evolution settings.
 		val maxGenerations = 100
@@ -157,11 +157,11 @@ class SpringEvolution3(val initial: Initial, val environment: Environment, val s
 		for (g in 0..maxGenerations - 1) {
 			evolutionRule.matchAndEvaluate(state)
 
-			stats?.newRow()?.let {
-				it["generation"] = g
-				state.solutions.forEachIndexed { i, entity -> it["s$i"] = entity.behavior.values.sum() }
-				state.problems.forEachIndexed { i, entity -> it["p$i"] = entity.behavior.values.sum() }
-			}
+//			stats?.newRow()?.let {
+//				it["generation"] = g
+//				state.solutions.forEachIndexed { i, entity -> it["s$i"] = entity.behavior.values.sum() }
+//				state.problems.forEachIndexed { i, entity -> it["p$i"] = entity.behavior.values.sum() }
+//			}
 
 			solutions = state.solutions
 

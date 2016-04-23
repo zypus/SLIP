@@ -198,7 +198,7 @@ class SimulationView : View() {
 						padding = Insets(10.0)
 						hbox {
 							spacing = 10.0
-							alignment = Pos.CENTER
+							alignment = Pos.CENTER_LEFT
 							var evolutionFragment: EvolutionFragment? = null
 							var thread: Thread? = null
 							val evolve = button("Evolve") {
@@ -270,10 +270,14 @@ class SimulationView : View() {
 							setOnAction {
 								val text1 = (parent.lookup("#a") as Label).text
 								val text2 = (parent.lookup("#b") as Label).text
+								val text3 = (parent.lookup("#c") as Label).text
+								val text4 = (parent.lookup("#d") as Label).text
 								val a = text1.toDouble()
 								val b = text2.toDouble()
+								val c = text3.toDouble()
+								val d = text4.toDouble()
 								// Build the state.
-								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b, it.springConstant) })
+								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b, c * it.angle + d) })
 								val s = SimulationState(slip, environment)
 
 								// Set the controller for the viewer.

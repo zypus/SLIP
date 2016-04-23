@@ -17,7 +17,7 @@ fun main(args: Array<String>) {
 	val statistic = Statistic("type", "initial x", "initial y", "initial vx", "initial vy", "initial angle", "rest length", "initial mass", "initial spring constant", "_compressed", "number of jumps", "collapsed", "max distance", "max height", "max velocity", "max angle", "min length", "end distance", "total time")
 
 	val environment = Environment()
-	val setting = SimulationSetting()
+	val setting = SimulationSetting(simulationStep = 0.5)
 	val control = SpringController { SpringControl(-0.02014512293491862 * it.velocity.x + 0.13381311880313776, it.springConstant) }
 
 	if (true) {
