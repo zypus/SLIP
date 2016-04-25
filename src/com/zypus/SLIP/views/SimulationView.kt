@@ -4,12 +4,15 @@ import com.zypus.SLIP.algorithms.SpringEvolution2
 import com.zypus.SLIP.algorithms.SpringEvolution3
 import com.zypus.SLIP.models.*
 import com.zypus.SLIP.models.terrain.SinusTerrain
+import com.zypus.gui.ChartFragment
 import com.zypus.gui.EvolutionFragment
+import com.zypus.gui.FitnessChart
 import com.zypus.utilities.Vector2
 import impl.org.controlsfx.skin.DecorationPane
 import javafx.application.Platform
 import javafx.geometry.Insets
 import javafx.geometry.Pos
+import javafx.scene.chart.Chart
 import javafx.scene.control.Label
 import javafx.scene.control.ProgressBar
 import javafx.scene.control.TabPane
@@ -35,7 +38,7 @@ class SimulationView : View() {
 	init {
 
 		//		var state: SimulationState? = null
-		val setting = SimulationSetting()
+		val setting = SimulationSetting(simulationStep = 0.1)
 
 		val initial = Initial(position = Vector2(0, 210), velocity = Vector2(0, 0))
 		val environment = Environment(terrain = SinusTerrain(frequency = 0.1, shift = 0.0, amplitude = 10.0, height = 30.0))
@@ -199,8 +202,8 @@ class SimulationView : View() {
 						hbox {
 							spacing = 10.0
 							alignment = Pos.CENTER_LEFT
-							var evolutionFragment: EvolutionFragment? = null
 							var thread: Thread? = null
+							var solutionChart: Chart? = null
 							val evolve = button("Evolve") {
 								setOnAction {
 									if (text == "Evolve") {
@@ -208,7 +211,9 @@ class SimulationView : View() {
 										val springEvolution3 = SpringEvolution3(initial, environment, setting)
 										val progress = (parent.lookup("#progress") as ProgressBar)
 										progress.progressProperty().bind(springEvolution3.progressProperty())
-										evolutionFragment = EvolutionFragment(springEvolution3, { this.behavior.values.sumByDouble { it as Double } })
+										solutionChart = FitnessChart(springEvolution3.generationProperty(), springEvolution3.solutionsProperty()) {
+											this.behavior.values.sumByDouble { it as Double }
+										}
 										thread = Thread {
 											val evolve = springEvolution3.evolve()
 											Platform.runLater {
@@ -232,7 +237,7 @@ class SimulationView : View() {
 							button("Show") {
 								visibleProperty().bind(evolve.textProperty().isEqualTo("Stop"))
 								setOnAction {
-									evolutionFragment?.openModal()
+									if (solutionChart != null) ChartFragment(solutionChart!!).openModal()
 								}
 							}
 						}
@@ -277,7 +282,7 @@ class SimulationView : View() {
 								val c = text3.toDouble()
 								val d = text4.toDouble()
 								// Build the state.
-								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b, c * it.angle + d) })
+								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b, c * (1.0 - it.length/it.restLength) + d) })
 								val s = SimulationState(slip, environment)
 
 								// Set the controller for the viewer.

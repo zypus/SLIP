@@ -57,8 +57,9 @@ class SimulationController {
 				/* As long as the spring lifts of the ground recompute with a smaller time step. */
 				if (nx[1] > h + terrain(tip.x) ) {
 					var count = 0
-					while (abs(nx[1] - (h + terrain(tip.x))) >= eps) {
-						if (count++ > 100) {
+					while (abs(nx[1] - (h + terrain(tip.x))) >= eps/2) {
+						if (count++ > 50) {
+							println("Stance phase: Breaking out of loop.")
 							break
 						}
 						if (nx[1] > h + terrain(tip.x) ) {
@@ -119,7 +120,12 @@ class SimulationController {
 				var tip = Vector2(nx[0], nx[1]) - tipDisplacement
 				// As long as the spring penetrates the ground recompute with a smaller time step.
 				if (tip.y < terrain(tip.x) ) {
+					var count = 0
 					while (abs(tip.y - terrain(tip.x)) >= eps) {
+						if (count++ > 100) {
+							println("Flight phase: Breaking out of loop.")
+							break
+						}
 						if (tip.y < terrain(tip.x) ) {
 							dt *= 0.5
 						}
