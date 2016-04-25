@@ -62,7 +62,10 @@ class EvolutionRules<SG : Any, SP : Any, SB : Any, PG : Any, PP : Any, PB : Any>
 		}.forEach {
 			try {
 				it.join()
-			} catch (e: InterruptedException) {}
+			} catch (e: InterruptedException) {
+				Thread.currentThread().interrupt()
+				return
+			}
 		}
 //		matches.map { tester.evaluation(it.first.phenotype, it.second.phenotype) }.zip(matches).forEach {
 //			val (behaviour, match) = it
