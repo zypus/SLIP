@@ -161,18 +161,18 @@ fun GraphicsContext.drawMarkers(start: Double, end: Double, offset: Double, majo
 }
 
 fun GraphicsContext.drawStateInfo(state: SimulationState) {
-	//		val slip = state.slip
-	//		// E_pot = m * g * h
-	//		val potentialEnergy = slip.mass * -state.environment.gravity.y * (slip.position.y - slip.radius - state.environment.terrain(slip.position.y))
-	//		// E_kin = 0.5 * m * v^2
-	//		val kineticEnergy = 0.5 * slip.mass * slip.velocity.norm2
-	//		// E_ela = 0.5 * k * dl^2
-	//		val elasticEnergy = 0.5 * slip.springConstant * Math.pow(slip.restLength - slip.length, 2.0)
-	//		val totalEnergy = potentialEnergy + kineticEnergy + elasticEnergy
-	//		var i = 0
-	//		fillText("Potential Energy: ${(potentialEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
-	//		fillText("Kinetic Energy  : ${(kineticEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
-	//		fillText("Elastic Energy  : ${(elasticEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
-	//		fillText("------------------------", 10.0, 20.0 * ++i)
-	//		fillText("Total Energy    : ${(totalEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
+//			val slip = state.slip
+//			// E_pot = m * g * h
+//			val potentialEnergy = slip.mass * -state.environment.gravity.y * (slip.position.y - slip.radius - state.environment.terrain(slip.position.y))
+//			// E_kin = 0.5 * m * v^2
+//			val kineticEnergy = 0.5 * slip.mass * slip.velocity.norm2
+//			// E_ela = 0.5 * k * dl^2
+//			val elasticEnergy = 0.5 * slip.springConstant * Math.pow(slip.restLength - slip.length, 2.0)
+//			val totalEnergy = potentialEnergy + kineticEnergy + elasticEnergy
+//			var i = 0
+//			fillText("Potential Energy: ${(potentialEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
+//			fillText("Kinetic Energy  : ${(kineticEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
+//			fillText("Elastic Energy  : ${(elasticEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
+//			fillText("------------------------", 10.0, 20.0 * ++i)
+//			fillText("Total Energy    : ${(totalEnergy * 100).toInt() / 100.0}", 10.0, 20.0 * ++i)
 }

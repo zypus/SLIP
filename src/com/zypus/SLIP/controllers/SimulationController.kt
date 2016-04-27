@@ -5,6 +5,7 @@ import com.zypus.SLIP.models.SimulationState
 import com.zypus.utilities.Vector2
 import com.zypus.utilities.lerp
 import com.zypus.utilities.rungeKutta
+import com.zypus.utilities.squared
 import java.lang.Math.*
 
 /**
@@ -21,7 +22,13 @@ class SimulationController {
 
 		fun step(state: SimulationState, setting: SimulationSetting): SimulationState {
 			var (dt, eps) = setting
-			var (pos, v, a, L, l, k, M, R, sPos, c) = state.slip
+			var (pos, v, a, L, l, k, M, R, sPos, c, crashed) = state.slip
+
+			/* If the slip is crashed return immediately without further calculation.*/
+			if (crashed) {
+				return state
+			}
+
 			val (G, terrain) = state.environment
 			// Compute the height from the tip off the spring to the mass center.
 			var h = cos(a) * (L + R);
@@ -54,23 +61,30 @@ class SimulationController {
 				var tip = Vector2(nx[0], nx[1]) - tipDisplacement
 //				var tip = Vector2(nx[4], terrain(nx[4]))
 
+				val LR2 = (L+R).squared
+				val eps2 = sqrt(eps)
+
 				/* As long as the spring lifts of the ground recompute with a smaller time step. */
-				if (nx[1] > h + terrain(tip.x) ) {
+				if ((x[0]-sPos.x).squared + (x[1]-sPos.y).squared > LR2 ) {
 					var count = 0
-					while (abs(nx[1] - (h + terrain(tip.x))) >= eps/2) {
+					while (abs((x[0] - sPos.x).squared + (x[1] - sPos.y).squared - LR2) >= eps2) {
 						if (count++ > 50) {
-							println("Stance phase: Breaking out of loop.")
+							crashed = true
 							break
 						}
-						if (nx[1] > h + terrain(tip.x) ) {
+						if ( (x[0] - sPos.x).squared + (x[1] - sPos.y).squared > LR2 ) {
 							dt *= 0.5
 						}
 						else {
 							x = nx
+							dt *= 0.5
 						}
+						/* Apply the forward approximation again with a smaller step size. */
 						nx = rungeKutta(x, f, dt)
-						a = atan2(x[0] - sPos.x, x[1] - sPos.y)
-						tip = Vector2(nx[0], nx[1]) - Vector2(sin(a) * (L + R), cos(a) * (L + R))
+
+						/* Update the angle, the position of the tip and the height. */
+//						a = atan2(x[0] - sPos.x, x[1] - sPos.y)
+//						tip = Vector2(nx[0], nx[1]) - Vector2(sin(a) * (L + R), cos(a) * (L + R))
 					}
 				}
 
@@ -91,7 +105,7 @@ class SimulationController {
 				/* Get the controller input and update angle but only if the spring remains above the ground. */
 				if (v.y < 0) {
 					val control = min(max(-PI,c.control(state.slip).angle),PI)
-					val na = a.lerp(control, 1.0)
+					val na = a.lerp(control, 0.3)
 					if (pos.y > cos(na) * (L + R) + terrain(pos.x - sin(na) * (L + R))) {
 						a = na
 					}
@@ -131,6 +145,7 @@ class SimulationController {
 						}
 						else {
 							x = nx
+							dt *= 0.5
 						}
 						nx = rungeKutta(x, f, dt)
 						tip = Vector2(nx[0], nx[1]) - tipDisplacement
@@ -144,11 +159,12 @@ class SimulationController {
 
 			// If the mass touches the ground stop the movement.
 			if (pos.y < R + terrain(pos.x)) {
+				crashed = true
 				pos = Vector2(pos.x - dt * v.x, R + terrain(pos.x))
 				v = Vector2(0, 0)
 			}
 
-			return state.copy(slip = state.slip.copy(position = pos, velocity = v, angle = a, length = l, springConstant = k, standPosition = sPos))
+			return state.copy(slip = state.slip.copy(position = pos, velocity = v, angle = a, length = l, springConstant = k, standPosition = sPos, crashed = crashed))
 		}
 
 	}

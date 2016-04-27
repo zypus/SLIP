@@ -108,7 +108,7 @@ class SpringEvolution3(val initial: Initial, val environment: Environment, val s
 					resolveBound(solutionBounds.getOrElse(i) { problemBounds[0] })
 				}}
 
-			mapping = { gen -> Environment(terrain = SinusTerrain(gen[0], 10.0, 0.0, 30.0)) }
+			mapping = { gen -> Environment(terrain = SinusTerrain(0.3, 10.0, 0.0, 30.0)) }
 
 		}
 
@@ -125,9 +125,9 @@ class SpringEvolution3(val initial: Initial, val environment: Environment, val s
 			evaluate = {
 				controller, environment ->
 				var state = SimulationState(SLIP(initial).copy(controller = controller), environment)
-				for (i in 1..1000) {
+				for (i in 1..2000) {
 					state = SimulationController.step(state, setting)
-					if (state.slip.position.y - state.slip.radius <= state.environment.terrain(state.slip.position.x)) break
+					if (state.slip.crashed) break
 				}
 				val x = state.slip.position.x
 				x to x
@@ -139,8 +139,8 @@ class SpringEvolution3(val initial: Initial, val environment: Environment, val s
 
 	fun evolve(): Entity<List<Double>, SpringController, Double> {
 		// Population settings.
-		val solutionCount = 50
-		val problemCount = 5
+		val solutionCount = 100
+		val problemCount = 1
 
 		// Evolution settings.
 		val maxGenerations = 100
@@ -152,7 +152,7 @@ class SpringEvolution3(val initial: Initial, val environment: Environment, val s
 		val stats: Statistic? = null//Statistic(*columns.toTypedArray())
 
 
-		var state = evolutionRule.initialize(100, 5)
+		var state = evolutionRule.initialize(solutionCount, problemCount)
 
 		for (g in 0..maxGenerations - 1) {
 			evolutionRule.matchAndEvaluate(state)
@@ -184,7 +184,7 @@ class SpringEvolution3(val initial: Initial, val environment: Environment, val s
 
 		stats?.writeToFile("evolution3.csv")
 
-		val first = state.solutions.sortedByDescending { it.behavior.values.sum() }.first()
+		val first = state.solutions.sortedByDescending { if (it.behavior.values.size > 1) println(it.behavior.values.size);it.behavior.values.sum() }.first()
 
 		solutions = state.solutions
 
@@ -194,7 +194,7 @@ class SpringEvolution3(val initial: Initial, val environment: Environment, val s
 
 		progress = 1.0
 
-		return state.solutions.first()
+		return first
 	}
 
 }
