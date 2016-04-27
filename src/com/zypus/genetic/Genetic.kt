@@ -45,7 +45,7 @@ class EvolutionRules<SG : Any, SP : Any, SB : Any, PG : Any, PP : Any, PB : Any>
 		val subtaskSize = matches.size/processors
 		(1..processors).map {
 			val subtask = if (it == processors) {
-				matches.subList((it-1)*subtaskSize, matches.size-1)
+				matches.subList((it-1)*subtaskSize, matches.size)
 			}
 			else {
 				matches.subList((it-1)*subtaskSize, it*subtaskSize)
@@ -53,8 +53,10 @@ class EvolutionRules<SG : Any, SP : Any, SB : Any, PG : Any, PP : Any, PB : Any>
 			val task = Thread {
 				subtask.map { tester.evaluation(it.first.phenotype, it.second.phenotype) }.zip(subtask).forEach {
 					val (behaviour, match) = it
-					match.first.behavior[match.second.genotype] = behaviour.first
-					match.second.behavior[match.first.genotype] = behaviour.second
+					val (solutionBehaviour, problemBehaviour) = behaviour
+					val (solution, problem) = match
+					solution.behavior[problem.genotype] = solutionBehaviour
+					problem.behavior[solution.genotype] = problemBehaviour
 				}
 			}
 			task.start()
