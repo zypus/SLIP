@@ -7,6 +7,7 @@ import javafx.beans.property.ObjectProperty
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.VBox
 import org.reactfx.EventStream
+import org.reactfx.Subscription
 import tornadofx.Fragment
 import tornadofx.plusAssign
 
@@ -26,7 +27,8 @@ class ProgressFragment(val generation: EventStream<Int>, val bestSolution: Objec
 	val setting = SimulationSetting()
 
 	init {
-		generation.feedTo {
+		var subscription: Subscription? = null
+		subscription = generation.feedTo {
 			if (it != null && it % 100 == 0) {
 				val solution = bestSolution.get()
 				val problem = bestProblem.get()
@@ -40,6 +42,9 @@ class ProgressFragment(val generation: EventStream<Int>, val bestSolution: Objec
 						modalStage?.height = 800.0
 					}
 				}
+			}
+			if (!(root.scene?.window?.isShowing ?: true)) {
+				subscription?.unsubscribe()
 			}
 		}
 	}

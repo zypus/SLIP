@@ -18,6 +18,7 @@ import javafx.scene.paint.Color
 import javafx.util.StringConverter
 import org.controlsfx.tools.Borders
 import org.reactfx.EventStreams
+import org.reactfx.Subscription
 import tornadofx.*
 
 /**
@@ -143,8 +144,10 @@ class StateFragment(var state: SimulationState, setting: SimulationSetting) : Fr
 			}
 			add.fire()
 		}
-		EventStreams.animationFrames().filter { play }
+		var subscription: Subscription? = null
+		subscription = EventStreams.animationFrames().filter { play }
 				.feedTo {
+					if (!root.scene.window.isShowing) subscription?.unsubscribe()
 					s = SimulationController.step(s, setting)
 					gc.drawSimulationState(s)
 				}

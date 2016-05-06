@@ -6,6 +6,7 @@ import com.zypus.SLIP.models.SimulationState
 import com.zypus.gui.ResizableCanvas
 import javafx.scene.layout.VBox
 import org.reactfx.EventStreams
+import org.reactfx.Subscription
 import tornadofx.Fragment
 
 /**
@@ -25,11 +26,16 @@ class SimpleStateFragment(var state: SimulationState, setting: SimulationSetting
 		var s = state
 		gc.drawSimulationState(s)
 
-		EventStreams.animationFrames()
+		var subscription: Subscription? = null
+		subscription = EventStreams.animationFrames()
 				.feedTo {
-					s = SimulationController.step(s, setting)
-					gc.drawSimulationState(s)
-					if (s.slip.crashed) s = state
+					if (!root.parent.scene.window.isShowing) {
+						subscription!!.unsubscribe()
+					} else {
+						s = SimulationController.step(s, setting)
+						gc.drawSimulationState(s)
+						if (s.slip.crashed) s = state
+					}
 				}
 	}
 

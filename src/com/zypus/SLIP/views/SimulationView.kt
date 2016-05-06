@@ -1,9 +1,6 @@
 package com.zypus.SLIP.views
 
-import com.zypus.SLIP.algorithms.Coevolution
-import com.zypus.SLIP.algorithms.GenericSpringEvolution
-import com.zypus.SLIP.algorithms.SpringEvolution2
-import com.zypus.SLIP.algorithms.SpringEvolution3
+import com.zypus.SLIP.algorithms.*
 import com.zypus.SLIP.models.*
 import com.zypus.SLIP.models.terrain.SinusTerrain
 import com.zypus.gui.ChartFragment
@@ -315,7 +312,7 @@ class SimulationView : View() {
 								setOnAction {
 									if (text == "Evolve") {
 										text = "Stop"
-										val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, Coevolution.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
+										val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, TerrainNoveltyCoevolution.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
 											if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
 										}
 										val progress = (parent.lookup("#progress") as ProgressBar)
