@@ -96,7 +96,7 @@ class SimulationView : View() {
 								val text = (parent.lookup("#angle") as TextField).text
 								val a = text.toDouble()
 								// Build the state.
-								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a, it.springConstant) })
+								val slip = SLIP(initial).copy(controller = SpringController (){ a })
 								val s = SimulationState(slip, environment)
 
 								// Set the controller for the viewer.
@@ -134,7 +134,7 @@ class SimulationView : View() {
 								val a = text1.toDouble()
 								val b = text2.toDouble()
 								// Build the state.
-								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b, it.springConstant) })
+								val slip = SLIP(initial).copy(controller = SpringController (){ a * it.velocity.x + b })
 								val s = SimulationState(slip, environment)
 
 								// Set the controller for the viewer.
@@ -187,7 +187,7 @@ class SimulationView : View() {
 								val a = text1.toDouble()
 								val b = text2.toDouble()
 								// Build the state.
-								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b, it.springConstant) })
+								val slip = SLIP(initial).copy(controller = SpringController ({a * it.velocity.x + b}))
 								val s = SimulationState(slip, environment)
 
 								// Set the controller for the viewer.
@@ -289,7 +289,7 @@ class SimulationView : View() {
 								val c = text3.toDouble()
 								val d = text4.toDouble()
 								// Build the state.
-								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b, c * (1.0 - it.length / it.restLength) + d) })
+								val slip = SLIP(initial).copy(controller = SpringController ({ a * it.velocity.x + b },{ c * (1.0 - it.length / it.restLength) + d }))
 								val s = SimulationState(slip, environment)
 
 								// Set the controller for the viewer.
@@ -398,7 +398,7 @@ class SimulationView : View() {
 								val c = text3.toDouble()
 								val d = text4.toDouble()
 								// Build the state.
-								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b, c * (1.0 - it.length / it.restLength) + d) })
+								val slip = SLIP(initial).copy(controller = SpringController ({ a * it.velocity.x + b }, { c * (1.0 - it.length / it.restLength) + d }))
 								val s = SimulationState(slip, environment)
 
 								// Set the controller for the viewer.

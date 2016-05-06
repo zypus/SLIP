@@ -18,7 +18,7 @@ fun main(args: Array<String>) {
 
 	val environment = Environment()
 	val setting = SimulationSetting(simulationStep = 0.5)
-	val control = SpringController { SpringControl(-0.02014512293491862 * it.velocity.x + 0.13381311880313776, it.springConstant) }
+	val control = SpringController ({ -0.02014512293491862 * it.velocity.x + 0.13381311880313776 })
 
 	if (true) {
 
@@ -28,7 +28,7 @@ fun main(args: Array<String>) {
 		for (t in arrayOf("uncontrolled", "controlled")) {
 			for (k in 1.rangeTo(kSteps).map { it.toDouble() / kSteps * 20 }) {
 				for (a in 0.rangeTo(aSteps).map { it.toDouble() / aSteps * Math.PI - Math.PI / 2 }) {
-					val slip = SLIP(position = Vector2(0, 200), velocity = Vector2(30, 0), angle = a, springConstant = k, controller = if (t == "uncontrolled") SpringController { SpringControl(a,it.springConstant) } else control)
+					val slip = SLIP(position = Vector2(0, 200), velocity = Vector2(30, 0), angle = a, springConstant = k, controller = if (t == "uncontrolled") SpringController ({ a}) else control)
 					var state = SimulationState(slip, environment)
 					// initialize new statistic recording
 					val row = statistic.newRow().apply {
@@ -56,7 +56,7 @@ fun main(args: Array<String>) {
 		val velocitySteps = 10;
 		val velocityStepSize = 20;
 
-		val controller = mapOf("uncontrolled" to SpringController { SpringControl(it.angle, it.springConstant) }, "controlled" to control)
+		val controller = mapOf("uncontrolled" to SpringController ({ it.angle }), "controlled" to control)
 
 		for ((k, v) in controller) {
 			for (y in 0.rangeTo(heightSteps).map { it.toDouble() / heightSteps * 200 + 110 }) {

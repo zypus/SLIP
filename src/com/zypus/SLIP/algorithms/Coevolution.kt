@@ -81,7 +81,7 @@ object Coevolution {
 				}
 			}
 
-			mapping = { gen -> SpringController { slip -> SpringControl(gen[0] * slip.velocity.x + gen[1], gen[2] * (1.0 - (slip.length / slip.restLength)) + gen[3]) } }
+			mapping = { gen -> SpringController ({ slip -> gen[0] * slip.velocity.x + gen[1]}, {slip -> gen[2] * (1.0 - (slip.length / slip.restLength)) + gen[3] }) }
 
 			select = { population ->
 				val rankedPopulation = population.sortedByDescending { it.behaviour!!.sum() }

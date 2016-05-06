@@ -67,7 +67,7 @@ class SpringEvolution2(val initial: Initial, val environment: Environment, val s
 				}
 			}
 
-			mapping = { gen -> SpringController { slip -> SpringControl(gen[0] * slip.velocity.x + gen[1], slip.springConstant) } }
+			mapping = { gen -> SpringController ({ slip -> gen[0] * slip.velocity.x + gen[1] }) }
 
 			select = { population ->
 				val picked = Selections.elitist(population, 10) {

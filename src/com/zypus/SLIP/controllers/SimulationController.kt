@@ -39,7 +39,7 @@ class SimulationController {
 				/* System is in the stance phase. */
 
 				/* Check the controller for the new spring value. */
-				k = c.control(state.slip).springConstant
+				k = c.constant(state.slip)
 				val sq: (Double) -> Double = { it*it }
 				val Fs: (Double,Double) -> Double = { ll, dl -> k*(L-ll) }
 				var x: List<Double> = arrayListOf(pos.x, pos.y, v.x, v.y)
@@ -104,7 +104,7 @@ class SimulationController {
 			else {
 				/* Get the controller input and update angle but only if the spring remains above the ground. */
 				if (v.y < 0) {
-					val control = min(max(-PI,c.control(state.slip).angle),PI)
+					val control = min(max(-PI,c.angle(state.slip)),PI)
 					val na = a.lerp(control, 0.3)
 					if (pos.y > cos(na) * (L + R) + terrain(pos.x - sin(na) * (L + R))) {
 						a = na
