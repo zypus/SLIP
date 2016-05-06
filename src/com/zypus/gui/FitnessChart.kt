@@ -6,7 +6,7 @@ import javafx.beans.property.ObjectProperty
 import javafx.scene.chart.LineChart
 import javafx.scene.chart.NumberAxis
 import javafx.scene.chart.XYChart
-import org.reactfx.EventStreams
+import org.reactfx.EventStream
 import tornadofx.observable
 
 /**
@@ -16,7 +16,7 @@ import tornadofx.observable
  *
  * @created 23/04/16
  */
-class FitnessChart(val generation: ObjectProperty<Int>, val entities: ObjectProperty<List<Entity<*,*,*>>>, fitness: Entity<*, *, *>.() -> Double): LineChart<Number,Number>(NumberAxis().apply { label = "Generation"; tickUnit = 1.0 }, NumberAxis().apply { label = "Fitness" }) {
+class FitnessChart(val generation: EventStream<Int>, val entities: ObjectProperty<List<Entity<*,*,*,*>>>, fitness: Entity<*, *, *,*>.() -> Double): LineChart<Number,Number>(NumberAxis().apply { label = "Generation"; tickUnit = 1.0 }, NumberAxis().apply { label = "Fitness" }) {
 
 	init {
 		title = "GA"
@@ -27,7 +27,7 @@ class FitnessChart(val generation: ObjectProperty<Int>, val entities: ObjectProp
 		val worstFitness = XYChart.Series<Number, Number>().apply { name = "Worst fitness"; data.add(XYChart.Data(0, 0)) }
 
 		/* Each time the generation gets updated add another entry to the series */
-		EventStreams.valuesOf(generation).feedTo {
+		generation.feedTo {
 
 			/* Add new data point to each series.*/
 			Platform.runLater {

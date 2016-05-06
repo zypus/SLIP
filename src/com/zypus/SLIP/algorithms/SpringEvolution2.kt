@@ -5,14 +5,18 @@ import com.zypus.SLIP.algorithms.genetic.builder.evolution
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
 import com.zypus.SLIP.models.terrain.SinusTerrain
+import javafx.beans.property.ObjectProperty
 import tornadofx.getProperty
 import tornadofx.property
 import java.util.*
 
 class SpringEvolution2(val initial: Initial, val environment: Environment, val setting: SimulationSetting): Evolution {
 
-	var solutions by property<List<Entity<*,*,*>>>(emptyList())
+	var solutions by property<List<Entity<*,*,*,*>>>(emptyList())
 	override fun solutionsProperty() = getProperty(SpringEvolution2::solutions)
+
+	var problems by property<List<Entity<*, *, *, *>>>(emptyList())
+	override fun problemsProperty() = getProperty(SpringEvolution2::problems)
 
 	var generation by property<Int>()
 	override fun generationProperty() = getProperty(SpringEvolution2::generation)
@@ -23,9 +27,17 @@ class SpringEvolution2(val initial: Initial, val environment: Environment, val s
 	var progress by property(0.0)
 	override fun progressProperty() = getProperty(SpringEvolution2::progress)
 
+	override fun bestSolutionProperty(): ObjectProperty<Entity<*, *, *, *>> {
+		throw UnsupportedOperationException()
+	}
+
+	override fun bestProblemProperty(): ObjectProperty<Entity<*, *, *, *>> {
+		throw UnsupportedOperationException()
+	}
+
 	var gen = 0
 
-	val evolutionRule = evolution<List<Double>, SpringController, Double, Double, Environment, Double> {
+	val evolutionRule = evolution<List<Double>, SpringController, Double, HashMap<Any,Double>, Double, Environment, Double, HashMap<Any,Double>> {
 
 		val random = Random()
 
@@ -58,10 +70,11 @@ class SpringEvolution2(val initial: Initial, val environment: Environment, val s
 			mapping = { gen -> SpringController { slip -> SpringControl(gen[0] * slip.velocity.x + gen[1], slip.springConstant) } }
 
 			select = { population ->
-				val picked = elitist(population, 10) {
-					it.behavior.values.sum()
+				val picked = Selections.elitist(population, 10) {
+					(it.behaviour as HashMap<*, *>).values.sumByDouble { it as Double }
 				}
-				Selection((0..4).map { picked[2 * it] to picked[2 * it + 1] }, population.filter { e -> !picked.contains(e) })
+				val toBeReplaced = population.filter { e -> !picked.contains(e) }
+				Selection(toBeReplaced.size, (0..4).map { picked[2 * it] to picked[2 * it + 1] }, toBeReplaced)
 			}
 
 			reproduce = { mother, father ->
@@ -97,6 +110,12 @@ class SpringEvolution2(val initial: Initial, val environment: Environment, val s
 				}.toList()
 			}
 
+			behaviour = {
+				initialize = { hashMapOf() }
+				store = { e, o, b -> e[o.genotype] = b; e }
+				remove = { e, o -> e.remove(o.genotype); e }
+			}
+
 		}
 
 		//		singularProblem = environment
@@ -106,6 +125,12 @@ class SpringEvolution2(val initial: Initial, val environment: Environment, val s
 			initialize = { random.nextDouble() }
 
 			mapping = { gen -> Environment (terrain = SinusTerrain(gen, 10.0, 0.0, 30.0)) }
+
+			behaviour = {
+				initialize = { hashMapOf() }
+				store = { e, o, b -> e[o.genotype] = b; e }
+				remove = { e, o -> e.remove(o.genotype); e }
+			}
 
 		}
 
@@ -132,7 +157,7 @@ class SpringEvolution2(val initial: Initial, val environment: Environment, val s
 
 	}
 
-	fun evolve(): Entity<List<Double>, SpringController, Double> {
+	fun evolve(): Entity<List<Double>, SpringController, Double, HashMap<Any,Double>> {
 		// Population settings.
 		val solutionCount = 100
 		val problemCount = 5
@@ -173,13 +198,13 @@ class SpringEvolution2(val initial: Initial, val environment: Environment, val s
 
 		stats.newRow().let {
 			it["generation"] = maxGenerations
-			state.solutions.forEachIndexed { i, entity -> it["s$i"] = entity.behavior.values.sum() }
-			state.problems.forEachIndexed { i, entity -> it["p$i"] = entity.behavior.values.sum() }
+			state.solutions.forEachIndexed { i, entity -> it["s$i"] = (entity.behaviour as HashMap<*, *>).values.sumByDouble { it as Double } }
+			state.problems.forEachIndexed { i, entity -> it["p$i"] = (entity.behaviour as HashMap<*, *>).values.sumByDouble { it as Double } }
 		}
 
 		stats.writeToFile("evolution.csv")
 
-		val first = state.solutions.sortedByDescending { it.behavior.values.sum() }.first()
+		val first = state.solutions.sortedByDescending { (it.behaviour as HashMap<*, *>).values.sumByDouble { it as Double } }.first()
 
 		solutions = state.solutions
 

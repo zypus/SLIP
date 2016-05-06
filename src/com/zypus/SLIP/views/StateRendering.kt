@@ -41,7 +41,7 @@ fun GraphicsContext.drawSimulationState(state: SimulationState) {
 	// Draw the terrain.
 	val start = x - canvas.width / 2
 	val end = x + canvas.width / 2
-	drawTerrain(start, end, 500, terrain)
+	drawTerrain(start, end, 1000, terrain)
 
 	// Draw slip.
 	// Draw the mass.

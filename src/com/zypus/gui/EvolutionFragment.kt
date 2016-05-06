@@ -20,7 +20,7 @@ import tornadofx.observable
  * @created 14/04/16
  */
 
-class EvolutionFragment(evolution: Evolution, fitness: Entity<*, *, *>.() -> Double) : Fragment() {
+class EvolutionFragment(evolution: Evolution, fitness: Entity<*, *, *,*>.() -> Double) : Fragment() {
 
 	val chart = LineChart<Number, Number>(NumberAxis().apply { label = "Generation"; tickUnit = 1.0 }, NumberAxis().apply { label = "Fitness" }).apply { title = "GA" }
 	val notificationPane = NotificationPane(chart)

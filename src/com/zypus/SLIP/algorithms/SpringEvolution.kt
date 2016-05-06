@@ -1,12 +1,13 @@
 package com.zypus.SLIP.algorithms
 
 import com.zypus.SLIP.algorithms.genetic.Selection
+import com.zypus.SLIP.algorithms.genetic.Selections
 import com.zypus.SLIP.algorithms.genetic.builder.evolution
 import com.zypus.SLIP.algorithms.genetic.crossover
-import com.zypus.SLIP.algorithms.genetic.elitist
 import com.zypus.SLIP.algorithms.genetic.mutate
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
+import java.util.*
 
 /**
  * TODO Add description
@@ -18,7 +19,7 @@ import com.zypus.SLIP.models.*
 
 class SpringEvolution(val initial: Initial, val environment: Environment, val setting: SimulationSetting) {
 
-	val evolutionRule = evolution<Long, SpringController, Double, Environment, Environment, Double> {
+	val evolutionRule = evolution<Long, SpringController, Double, HashMap<Any,Double>, Environment, Environment, Double, HashMap<Any, Double>> {
 
 		solution = {
 
@@ -29,14 +30,21 @@ class SpringEvolution(val initial: Initial, val environment: Environment, val se
 				SpringController { slip -> SpringControl(f * slip.velocity.x + 0.1, slip.springConstant) } }
 
 			select = { population ->
-				val picked = elitist(population, 10) {
-					it.behavior.values.sum()
+				val picked = Selections.elitist(population, 10) {
+					(it.behaviour as HashMap<*, *>).values.sumByDouble { it as Double }
 				}
-				Selection((0..4).map { picked[2 * it] to picked[2 * it + 1] }, population.filter { e -> !picked.contains(e) })
+				val toBeReplaced = population.filter { e -> !picked.contains(e) }
+				Selection(toBeReplaced.size, (0..4).map { picked[2 * it] to picked[2 * it + 1] }, toBeReplaced)
 			}
 
 			reproduce = { mother, father ->
 				mother.crossover(father, 1.0).mutate(1.0)
+			}
+
+			behaviour = {
+				initialize = { hashMapOf() }
+				store = { e,o,b -> e[o.genotype] = b; e }
+				remove = {e,o -> e.remove(o.genotype); e}
 			}
 
 		}
@@ -75,7 +83,7 @@ class SpringEvolution(val initial: Initial, val environment: Environment, val se
 
 		evolutionRule.matchAndEvaluate(state)
 
-		val first = state.solutions.sortedByDescending { it.behavior.values.sum() }.first()
+		val first = state.solutions.sortedByDescending { (it.behaviour as HashMap<*, *>).values.sumByDouble { it as Double } }.first()
 
 		println(state.solutions.first().genotype)
 

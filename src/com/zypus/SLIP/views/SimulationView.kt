@@ -1,5 +1,7 @@
 package com.zypus.SLIP.views
 
+import com.zypus.SLIP.algorithms.Coevolution
+import com.zypus.SLIP.algorithms.GenericSpringEvolution
 import com.zypus.SLIP.algorithms.SpringEvolution2
 import com.zypus.SLIP.algorithms.SpringEvolution3
 import com.zypus.SLIP.models.*
@@ -18,10 +20,13 @@ import javafx.scene.control.ProgressBar
 import javafx.scene.control.TabPane
 import javafx.scene.control.TextField
 import javafx.scene.layout.VBox
+import javafx.stage.Modality
 import org.controlsfx.tools.ValueExtractor
 import org.controlsfx.validation.Severity
 import org.controlsfx.validation.ValidationSupport
+import org.reactfx.EventStreams
 import tornadofx.*
+import java.util.*
 
 /**
  * View to render all simulation state relevant information.
@@ -63,7 +68,7 @@ class SimulationView : View() {
 		with(root) {
 
 			val numberValidator = org.controlsfx.validation.Validator.createRegexValidator("Please enter a valid number!", "^-?\\d+(,\\d+)*(\\.\\d+(e\\d+)?)?$", Severity.ERROR)
-			ValueExtractor.addObservableValueExtractor({c -> c is Label}, {c -> (c as Label).textProperty()});
+			ValueExtractor.addObservableValueExtractor({ c -> c is Label }, { c -> (c as Label).textProperty() });
 
 			tabpane {
 				tabClosingPolicy = TabPane.TabClosingPolicy.UNAVAILABLE
@@ -149,7 +154,7 @@ class SimulationView : View() {
 						button("Evolve") {
 							setOnAction {
 								val springEvolution2 = SpringEvolution2(initial, environment, setting)
-								EvolutionFragment(springEvolution2, { this.behavior.values.sumByDouble { it as Double } }).openModal()
+								EvolutionFragment(springEvolution2, { (this.behaviour as HashMap<*, *>).values.sumByDouble { it as Double } }).openModal()
 								Thread {
 									val evolve = springEvolution2.evolve()
 									Platform.runLater {
@@ -182,7 +187,7 @@ class SimulationView : View() {
 								val a = text1.toDouble()
 								val b = text2.toDouble()
 								// Build the state.
-								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b,it.springConstant) })
+								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b, it.springConstant) })
 								val s = SimulationState(slip, environment)
 
 								// Set the controller for the viewer.
@@ -211,8 +216,9 @@ class SimulationView : View() {
 										val springEvolution3 = SpringEvolution3(initial, environment, setting)
 										val progress = (parent.lookup("#progress") as ProgressBar)
 										progress.progressProperty().bind(springEvolution3.progressProperty())
-										solutionChart = FitnessChart(springEvolution3.generationProperty(), springEvolution3.solutionsProperty()) {
-											this.behavior.values.sumByDouble { it as Double }
+										val generation = EventStreams.valuesOf(springEvolution3.generationProperty())
+										solutionChart = FitnessChart(generation, springEvolution3.solutionsProperty()) {
+											(this.behaviour as HashMap<*, *>).values.sumByDouble { it as Double }
 										}
 										thread = Thread {
 											val evolve = springEvolution3.evolve()
@@ -225,7 +231,8 @@ class SimulationView : View() {
 											}
 										}
 										thread?.start()
-									} else {
+									}
+									else {
 										thread?.interrupt()
 									}
 								}
@@ -282,7 +289,116 @@ class SimulationView : View() {
 								val c = text3.toDouble()
 								val d = text4.toDouble()
 								// Build the state.
-								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b, c * (1.0 - it.length/it.restLength) + d) })
+								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b, c * (1.0 - it.length / it.restLength) + d) })
+								val s = SimulationState(slip, environment)
+
+								// Set the controller for the viewer.
+								StateFragment(s, setting).openModal()
+							}
+						}
+					}
+				}
+
+				/* MARK: COEVOLUTION */
+
+				tab("Coevolution", DecorationPane()) {
+					val support = ValidationSupport()
+					vbox {
+						spacing = 10.0
+						padding = Insets(10.0)
+						hbox {
+							spacing = 10.0
+							alignment = Pos.CENTER_LEFT
+							var thread: Thread? = null
+							var solutionChart: Chart? = null
+							val evolve = button("Evolve") {
+								setOnAction {
+									if (text == "Evolve") {
+										text = "Stop"
+										val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, Coevolution.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
+											if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
+										}
+										val progress = (parent.lookup("#progress") as ProgressBar)
+										progress.progressProperty().bind(springEvolution.progressProperty())
+										val generation = EventStreams.valuesOf(springEvolution.generationProperty())
+//										solutionChart = FitnessChart(generation, springEvolution.solutionsProperty()) {
+//											synchronized(SortLock.lock) {
+//												(this.behaviour as List<*>).sumByDouble { it as? Double ?: 0.0 }
+//											}
+//										}
+										ProgressFragment(generation, springEvolution.bestSolutionProperty(), springEvolution.bestProblemProperty()).openModal(modality = Modality.NONE)
+										thread = Thread {
+											val evolve = springEvolution.evolve(50, 50, 1000)
+											Platform.runLater {
+												(parent.parent.lookup("#a") as Label).text = "${evolve.genotype[0]}"
+												(parent.parent.lookup("#b") as Label).text = "${evolve.genotype[1]}"
+												(parent.parent.lookup("#c") as Label).text = "${evolve.genotype[2]}"
+												(parent.parent.lookup("#d") as Label).text = "${evolve.genotype[3]}"
+												text = "Evolve"
+//												val s = SimulationState(SLIP(initial).copy(controller = springEvolution.bestSolution.phenotype as SpringController), springEvolution.bestProblem.phenotype as Environment)
+//												SimpleStateFragment(s, setting).openModal()
+											}
+										}
+										thread?.start()
+									}
+									else {
+										thread?.interrupt()
+									}
+								}
+							}
+							progressBar {
+								id = "progress"
+								visibleProperty().bind(evolve.textProperty().isEqualTo("Stop"))
+							}
+							button("Show") {
+								visibleProperty().bind(evolve.textProperty().isEqualTo("Stop"))
+								setOnAction {
+									if (solutionChart != null) ChartFragment(solutionChart!!).openModal()
+								}
+							}
+						}
+
+						hbox {
+							alignment = Pos.CENTER_LEFT
+							label("a") {
+								style = "-fx-font-weight: bold;"
+								id = "a"
+								support.registerValidator(this, numberValidator)
+							}
+							label(" velocity.x + ")
+							label("b") {
+								style = "-fx-font-weight: bold;"
+								id = "b"
+								support.registerValidator(this, numberValidator)
+							}
+
+							label(" , ")
+							label("c") {
+								style = "-fx-font-weight: bold;"
+								id = "c"
+								support.registerValidator(this, numberValidator)
+							}
+							label(" compression + ")
+							label("d") {
+								style = "-fx-font-weight: bold;"
+								id = "d"
+								support.registerValidator(this, numberValidator)
+							}
+						}
+						button {
+							disableProperty().bind(support.invalidProperty())
+							text = "Deploy"
+							setOnAction {
+								val text1 = (parent.lookup("#a") as Label).text
+								val text2 = (parent.lookup("#b") as Label).text
+								val text3 = (parent.lookup("#c") as Label).text
+								val text4 = (parent.lookup("#d") as Label).text
+								val a = text1.toDouble()
+								val b = text2.toDouble()
+								val c = text3.toDouble()
+								val d = text4.toDouble()
+								// Build the state.
+								val slip = SLIP(initial).copy(controller = SpringController { SpringControl(a * it.velocity.x + b, c * (1.0 - it.length / it.restLength) + d) })
 								val s = SimulationState(slip, environment)
 
 								// Set the controller for the viewer.

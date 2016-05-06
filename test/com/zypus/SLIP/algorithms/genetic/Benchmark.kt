@@ -79,7 +79,7 @@ class Benchmark {
 		runEvolution(evolutionRules, 0.0, maxIter = 50000, epsilon = 1E-4)
 	}
 
-	private fun optimisationProblem(bounds: List<Pair<Double,Double>>, n: Int, f: (List<Double>) -> Double): EvolutionRules<List<Double>, List<Double>, Double, (List<Double>) -> Double, (List<Double>) -> Double, Double> {
+	private fun optimisationProblem(bounds: List<Pair<Double,Double>>, n: Int, f: (List<Double>) -> Double): EvolutionRules<List<Double>, List<Double>, Double, HashMap<Any,Double>, (List<Double>) -> Double, (List<Double>) -> Double, Double, HashMap<Any,Double>> {
 
 		val survivalCount = 10
 
@@ -114,10 +114,11 @@ class Benchmark {
 				// phenotype = genotype, so no explicit mapping is necessary
 
 				select = { population ->
-					val picked = elitist(population, survivalCount) {
-						it.behavior.values.sumByDouble { it.toDouble() }
+					val picked = Selections.elitist(population, survivalCount) {
+						(it.behaviour as HashMap<*, *>).values.sumByDouble { it as Double }
 					}
-					Selection((0..(survivalCount / 2) - 1).map { picked[2 * it] to picked[2 * it + 1] }, population.filter { e -> !picked.contains(e) })
+					val toBeReplaced = population.filter { e -> !picked.contains(e) }
+					Selection(toBeReplaced.size, (0..4).map { picked[2 * it] to picked[2 * it + 1] }, toBeReplaced)
 				}
 
 				reproduce = { mother, father ->
@@ -169,14 +170,14 @@ class Benchmark {
 	}
 
 	// Runs the specified evolutionary algorithm until the minimum is reached or a specified number of generations is reached.
-	private fun runEvolution(evolution: EvolutionRules<List<Double>, List<Double>, Double, (List<Double>) -> Double, (List<Double>) -> Double, Double>, minimum: Double, maxIter: Int = 5000, solutionCount: Int = 100, problemCount: Int = 1, epsilon: Double = 1e-6) {
+	private fun runEvolution(evolution: EvolutionRules<List<Double>, List<Double>, Double, HashMap<Any,Double>, (List<Double>) -> Double, (List<Double>) -> Double, Double, HashMap<Any, Double>>, minimum: Double, maxIter: Int = 5000, solutionCount: Int = 100, problemCount: Int = 1, epsilon: Double = 1e-6) {
 		var state = evolution.initialize(solutionCount, problemCount)
 
 		println("Initialized:")
 
 		var generation = 1
 
-		val solved: (Entity<List<Double>, List<Double>, Double>) -> Boolean = { e -> e.behavior.values.any { abs(-minimum-it) < epsilon  } }
+		val solved: (Entity<List<Double>, List<Double>, Double, HashMap<Any, Double>>) -> Boolean = { e -> (e.behaviour as HashMap<*,*>).values.any { abs(-minimum-(it as Double)) < epsilon  } }
 		while (state.solutions.none(solved) ) {
 			evolution.matchAndEvaluate(state)
 
@@ -186,14 +187,14 @@ class Benchmark {
 
 			state = evolution.selectAndReproduce(state)
 
-			Assert.assertTrue("To many generations($generation). ${state.solutions.first().phenotype} with ${state.solutions.first().behavior.values.first()}", generation < maxIter)
+			Assert.assertTrue("To many generations($generation). ${state.solutions.first().phenotype} with ${(state.solutions.first().behaviour as HashMap<*,*>).values.first()}", generation < maxIter)
 		}
 
 		val solution = state.solutions.first(solved)
-		println("Final answer is \"${solution.phenotype}\" in $generation generations by ${solution.genotype} with score of ${solution.behavior.values.first()}")
+		println("Final answer is \"${solution.phenotype}\" in $generation generations by ${solution.genotype} with score of ${(solution.behaviour as HashMap<*, *>).values.first()}")
 
-		Assert.assertTrue("Solution is not equal to target.", solution.behavior.values.any {
-			(it - minimum) < epsilon } )
+		Assert.assertTrue("Solution is not equal to target.", (solution.behaviour as HashMap<*, *>).values.any {
+			(it as Double - minimum) < epsilon } )
 	}
 
 }

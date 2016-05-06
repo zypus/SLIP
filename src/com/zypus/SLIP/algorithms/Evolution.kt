@@ -12,9 +12,13 @@ import javafx.beans.property.ObjectProperty
  */
 interface Evolution {
 
-	fun solutionsProperty(): ObjectProperty<List<Entity<*, *, *>>>
+	fun solutionsProperty(): ObjectProperty<List<Entity<*, *, *,*>>>
+	fun problemsProperty(): ObjectProperty<List<Entity<*, *, *, *>>>
 	fun generationProperty(): ObjectProperty<Int>
 	fun progressProperty(): ObjectProperty<Double>
 	fun finishedProperty(): ObjectProperty<Boolean>
+
+	fun bestSolutionProperty(): ObjectProperty<Entity<*, *, *, *>>
+	fun bestProblemProperty(): ObjectProperty<Entity<*, *, *, *>>
 
 }

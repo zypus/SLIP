@@ -15,10 +15,10 @@ import tornadofx.Fragment
  *
  * @created 23/04/16
  */
-class SimpleStateFragment(var state: SimulationState, setting: SimulationSetting) : Fragment() {
+class SimpleStateFragment(var state: SimulationState, setting: SimulationSetting, width: Double = 500.0, height: Double = 500.0) : Fragment() {
 
-	val canvas = ResizableCanvas(500.0, 500.0)
-	override val root = VBox()
+	val canvas = ResizableCanvas(width, height)
+	override val root = VBox(canvas)
 
 	init {
 		val gc = canvas.graphicsContext2D
@@ -29,7 +29,7 @@ class SimpleStateFragment(var state: SimulationState, setting: SimulationSetting
 				.feedTo {
 					s = SimulationController.step(s, setting)
 					gc.drawSimulationState(s)
-					if (s.slip.position.y - s.slip.radius <= s.environment.terrain(s.slip.position.x)) s = state
+					if (s.slip.crashed) s = state
 				}
 	}
 

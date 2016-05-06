@@ -3,8 +3,6 @@ package com.zypus.SLIP
 import com.zypus.SLIP.views.SimulationView
 import javafx.application.Application
 import tornadofx.App
-import tornadofx.View
-import kotlin.reflect.KClass
 
 /**
  * TODO Add description
