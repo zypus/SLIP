@@ -9,7 +9,6 @@ import javafx.scene.layout.VBox
 import org.reactfx.EventStream
 import org.reactfx.Subscription
 import tornadofx.Fragment
-import tornadofx.plusAssign
 
 /**
  * TODO Add description
@@ -37,7 +36,7 @@ class ProgressFragment(val generation: EventStream<Int>, val bestSolution: Objec
 					val environment = problem.phenotype as Environment
 					val s = SimulationState(SLIP(initial).copy(controller = controller), environment)
 					Platform.runLater {
-						vbox += SimpleStateFragment(s, setting, 500.0, 200.0)
+						vbox.children.add(0, SimpleStateFragment(s, setting, 500.0, 200.0).root)
 						modalStage?.width = 500.0
 						modalStage?.height = 800.0
 					}

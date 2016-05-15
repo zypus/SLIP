@@ -11,4 +11,6 @@ interface Terrain {
 
 	operator fun invoke(x: Double): Double
 
+	override fun toString(): String
+
 }

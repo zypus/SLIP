@@ -2,6 +2,7 @@ package com.zypus.SLIP.algorithms
 
 import com.zypus.SLIP.algorithms.genetic.Entity
 import com.zypus.SLIP.algorithms.genetic.EvolutionRules
+import com.zypus.SLIP.controllers.StatisticDelegate
 import com.zypus.SLIP.models.Environment
 import com.zypus.SLIP.models.Initial
 import com.zypus.SLIP.models.SimulationSetting
@@ -16,7 +17,7 @@ import tornadofx.property
  *
  * @created 28/04/16
  */
-class GenericSpringEvolution<SG : Any, SP : Any, SB : Any, SBC : Any, PG : Any, PP : Any, PB : Any, PBC : Any>(val initial: Initial, val environment: Environment, val setting: SimulationSetting, val evolutionRule: EvolutionRules<SG, SP, SB, SBC, PG, PP, PB, PBC>, val problemScore: (PBC) -> Double = {0.0}, val solutionScore: (SBC) -> Double): Evolution {
+class GenericSpringEvolution<SG : Any, SP : Any, SB : Any, SBC : Any, PG : Any, PP : Any, PB : Any, PBC : Any>(val initial: Initial, val environment: Environment, val setting: SimulationSetting, val evolutionRule: EvolutionRules<SG, SP, SB, SBC, PG, PP, PB, PBC>, val problemScore: (PBC) -> Double = { 0.0 }, val solutionScore: (SBC) -> Double) : Evolution {
 
 	var solutions by property<List<Entity<*, *, *, *>>>(emptyList())
 	override fun solutionsProperty() = getProperty(GenericSpringEvolution<SG, SP, SB, SBC, PG, PP, PB, PBC>::solutions)
@@ -33,31 +34,25 @@ class GenericSpringEvolution<SG : Any, SP : Any, SB : Any, SBC : Any, PG : Any, 
 	var progress by property(0.0)
 	override fun progressProperty() = getProperty(GenericSpringEvolution<SG, SP, SB, SBC, PG, PP, PB, PBC>::progress)
 
-	var bestSolution by property<Entity<*,*,*,*>>()
+	var bestSolution by property<Entity<*, *, *, *>>()
 	override fun bestSolutionProperty() = getProperty(GenericSpringEvolution<SG, SP, SB, SBC, PG, PP, PB, PBC>::bestSolution)
 
 	var bestProblem by property<Entity<*, *, *, *>>()
 	override fun bestProblemProperty() = getProperty(GenericSpringEvolution<SG, SP, SB, SBC, PG, PP, PB, PBC>::bestProblem)
 
-	fun evolve(solutionCount: Int, problemCount: Int, maxGenerations: Int): Entity<SG, SP, SB, SBC> {
+	fun evolve(solutionCount: Int, problemCount: Int, maxGenerations: Int, statsDelegate: StatisticDelegate<SG, SP, SB, SBC, PG, PP, PB, PBC>? = null): Entity<SG, SP, SB, SBC> {
 
 		// Setup statistics.
-		var columns: MutableList<String> = arrayListOf("generation")
-		repeat(solutionCount) { columns.add("s$it") }
-		repeat(problemCount) { columns.add("p$it") }
-		val stats: Statistic? = null//Statistic(*columns.toTypedArray())
-
+		val stats: Statistic? = statsDelegate?.initialize(solutionCount, problemCount)
 
 		var state = evolutionRule.initialize(solutionCount, problemCount)
 
 		for (g in 0..maxGenerations - 1) {
 			evolutionRule.matchAndEvaluate(state)
 
-			//			stats?.newRow()?.let {
-			//				it["generation"] = g
-			//				state.solutions.forEachIndexed { i, entity -> it["s$i"] = entity.behavior.values.sum() }
-			//				state.problems.forEachIndexed { i, entity -> it["p$i"] = entity.behavior.values.sum() }
-			//			}
+			if (stats != null) {
+				statsDelegate?.update(stats.newRow(), g, state)
+			}
 
 			solutions = state.solutions
 
@@ -77,13 +72,10 @@ class GenericSpringEvolution<SG : Any, SP : Any, SB : Any, SBC : Any, PG : Any, 
 
 		evolutionRule.matchAndEvaluate(state)
 
-		stats?.newRow()?.let {
-			it["generation"] = maxGenerations
-			state.solutions.forEachIndexed { i, entity -> it["s$i"] = solutionScore(entity.behaviour!!) }
-			state.problems.forEachIndexed { i, entity -> it["p$i"] = problemScore(entity.behaviour!!) }
+		if (stats != null) {
+			statsDelegate?.update(stats.newRow(), maxGenerations, state)
+			statsDelegate?.save(stats)
 		}
-
-		stats?.writeToFile("evolution3.csv")
 
 		val first = state.solutions.sortedByDescending { solutionScore(it.behaviour!!) }.first()
 

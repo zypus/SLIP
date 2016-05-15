@@ -201,7 +201,11 @@ object SLIPNoveltyCoevolution {
 			match = {
 				evolutionState ->
 				synchronized(SortLock.lock) {
-					val sortedSolutions = evolutionState.solutions.sortedByDescending { it.behaviour!!.sum() }
+					val sortedSolutions = evolutionState.solutions.sortedByDescending { e ->
+						val sum = e.behaviour!!.sum()
+						val x = evolutionState.solutions.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
+						Math.abs(x!!.behaviour!!.sum() - sum)
+					}
 					val sortedProblems = evolutionState.problems.sortedByDescending { it.behaviour!!.sum() }
 					//					val totalSolutionFitness = sortedSolutions.sumByDouble { it.behaviour!!.sum() }
 					//					val totalProblemFitness = sortedProblems.sumByDouble { it.behaviour!!.sum() }

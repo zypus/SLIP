@@ -1,8 +1,10 @@
 package com.zypus.SLIP.views
 
 import com.zypus.SLIP.algorithms.*
+import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
 import com.zypus.SLIP.models.terrain.SinusTerrain
+import com.zypus.SLIP.verification.TestTerrains
 import com.zypus.gui.ChartFragment
 import com.zypus.gui.EvolutionFragment
 import com.zypus.gui.FitnessChart
@@ -36,6 +38,9 @@ import java.util.*
 class SimulationView : View() {
 
 	override val root = VBox()
+
+	var deployable by property<SpringController?>(null)
+	fun deployableProperty() = getProperty(SimulationView::deployable)
 
 	init {
 
@@ -85,19 +90,26 @@ class SimulationView : View() {
 								id = "angle"
 								support.registerValidator(this, numberValidator)
 							}
+							EventStreams.valuesOf(support.invalidProperty()).feedTo {
+								if (!it) {
+									val text = (parent.lookup("#angle") as TextField).text
+									val a = text.toDouble()
+									deployable = SpringController ({ a })
+								} else {
+									deployable = null
+								}
+							}
 						}
-						button {
-							disableProperty().bind(support.invalidProperty())
-							text = "Deploy"
-							setOnAction {
-								val text = (parent.lookup("#angle") as TextField).text
+					}
+					EventStreams.combine(EventStreams.valuesOf(support.invalidProperty()), EventStreams.valuesOf(selectionModel.selectedItemProperty())).feedTo {
+						if (it._2.content == this) {
+							if (!it._1) {
+								val text = (lookup("#angle") as TextField).text
 								val a = text.toDouble()
-								// Build the state.
-								val slip = SLIP(initial).copy(controller = SpringController (){ a })
-								val s = SimulationState(slip, environment)
-
-								// Set the controller for the viewer.
-								StateFragment(s, setting).openModal()
+								deployable = SpringController ({ a })
+							}
+							else {
+								deployable = null
 							}
 						}
 					}
@@ -122,20 +134,18 @@ class SimulationView : View() {
 								support.registerValidator(this, numberValidator)
 							}
 						}
-						button {
-							disableProperty().bind(support.invalidProperty())
-							text = "Deploy"
-							setOnAction {
-								val text1 = (parent.lookup("#a") as TextField).text
-								val text2 = (parent.lookup("#b") as TextField).text
+					}
+					EventStreams.combine(EventStreams.valuesOf(support.invalidProperty()), EventStreams.valuesOf(selectionModel.selectedItemProperty())).feedTo {
+						if (it._2.content == this) {
+							if (!it._1) {
+								val text1 = (lookup("#a") as TextField).text
+								val text2 = (lookup("#b") as TextField).text
 								val a = text1.toDouble()
 								val b = text2.toDouble()
-								// Build the state.
-								val slip = SLIP(initial).copy(controller = SpringController (){ a * it.velocity.x + b })
-								val s = SimulationState(slip, environment)
-
-								// Set the controller for the viewer.
-								StateFragment(s, setting).openModal()
+								deployable = SpringController ({ a * it.velocity.x + b })
+							}
+							else {
+								deployable = null
 							}
 						}
 					}
@@ -175,20 +185,18 @@ class SimulationView : View() {
 								support.registerValidator(this, numberValidator)
 							}
 						}
-						button {
-							disableProperty().bind(support.invalidProperty())
-							text = "Deploy"
-							setOnAction {
-								val text1 = (parent.lookup("#a") as Label).text
-								val text2 = (parent.lookup("#b") as Label).text
+					}
+					EventStreams.combine(EventStreams.valuesOf(support.invalidProperty()), EventStreams.valuesOf(selectionModel.selectedItemProperty())).feedTo {
+						if (it._2.content == this) {
+							if (!it._1) {
+								val text1 = (lookup("#a") as Label).text
+								val text2 = (lookup("#b") as Label).text
 								val a = text1.toDouble()
 								val b = text2.toDouble()
-								// Build the state.
-								val slip = SLIP(initial).copy(controller = SpringController ({a * it.velocity.x + b}))
-								val s = SimulationState(slip, environment)
-
-								// Set the controller for the viewer.
-								StateFragment(s, setting).openModal()
+								deployable = SpringController ({ a * it.velocity.x + b })
+							}
+							else {
+								deployable = null
 							}
 						}
 					}
@@ -273,24 +281,22 @@ class SimulationView : View() {
 								support.registerValidator(this, numberValidator)
 							}
 						}
-						button {
-							disableProperty().bind(support.invalidProperty())
-							text = "Deploy"
-							setOnAction {
-								val text1 = (parent.lookup("#a") as Label).text
-								val text2 = (parent.lookup("#b") as Label).text
-								val text3 = (parent.lookup("#c") as Label).text
-								val text4 = (parent.lookup("#d") as Label).text
+					}
+					EventStreams.combine(EventStreams.valuesOf(support.invalidProperty()), EventStreams.valuesOf(selectionModel.selectedItemProperty())).feedTo {
+						if (it._2.content == this) {
+							if (!it._1) {
+								val text1 = (lookup("#a") as Label).text
+								val text2 = (lookup("#b") as Label).text
+								val text3 = (lookup("#c") as Label).text
+								val text4 = (lookup("#d") as Label).text
 								val a = text1.toDouble()
 								val b = text2.toDouble()
 								val c = text3.toDouble()
 								val d = text4.toDouble()
-								// Build the state.
-								val slip = SLIP(initial).copy(controller = SpringController ({ a * it.velocity.x + b },{ c * (1.0 - it.length / it.restLength) + d }))
-								val s = SimulationState(slip, environment)
-
-								// Set the controller for the viewer.
-								StateFragment(s, setting).openModal()
+								deployable = SpringController ({ a * it.velocity.x + b }, { c * (1.0 - it.length / it.restLength) + d })
+							}
+							else {
+								deployable = null
 							}
 						}
 					}
@@ -312,7 +318,7 @@ class SimulationView : View() {
 								setOnAction {
 									if (text == "Evolve") {
 										text = "Stop"
-										val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, TerrainNoveltyCoevolution.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
+										val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, Coevolution.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
 											if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
 										}
 										val progress = (parent.lookup("#progress") as ProgressBar)
@@ -382,31 +388,270 @@ class SimulationView : View() {
 								support.registerValidator(this, numberValidator)
 							}
 						}
-						button {
-							disableProperty().bind(support.invalidProperty())
-							text = "Deploy"
-							setOnAction {
-								val text1 = (parent.lookup("#a") as Label).text
-								val text2 = (parent.lookup("#b") as Label).text
-								val text3 = (parent.lookup("#c") as Label).text
-								val text4 = (parent.lookup("#d") as Label).text
+					}
+					EventStreams.combine(EventStreams.valuesOf(support.invalidProperty()), EventStreams.valuesOf(selectionModel.selectedItemProperty())).feedTo {
+						if (it._2.content == this) {
+							if (!it._1) {
+								val text1 = (lookup("#a") as Label).text
+								val text2 = (lookup("#b") as Label).text
+								val text3 = (lookup("#c") as Label).text
+								val text4 = (lookup("#d") as Label).text
 								val a = text1.toDouble()
 								val b = text2.toDouble()
 								val c = text3.toDouble()
 								val d = text4.toDouble()
-								// Build the state.
-								val slip = SLIP(initial).copy(controller = SpringController ({ a * it.velocity.x + b }, { c * (1.0 - it.length / it.restLength) + d }))
-								val s = SimulationState(slip, environment)
+								deployable = SpringController ({ a * it.velocity.x + b }, { c * (1.0 - it.length / it.restLength) + d })
+							}
+							else {
+								deployable = null
+							}
+						}
+					}
+				}
 
-								// Set the controller for the viewer.
-								StateFragment(s, setting).openModal()
+				tab("SLIP Novelty Coevolution", DecorationPane()) {
+					val support = ValidationSupport()
+					vbox {
+						spacing = 10.0
+						padding = Insets(10.0)
+						hbox {
+							spacing = 10.0
+							alignment = Pos.CENTER_LEFT
+							var thread: Thread? = null
+							var solutionChart: Chart? = null
+							val evolve = button("Evolve") {
+								setOnAction {
+									if (text == "Evolve") {
+										text = "Stop"
+										val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, SLIPNoveltyCoevolution.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
+											if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
+										}
+										val progress = (parent.lookup("#progress") as ProgressBar)
+										progress.progressProperty().bind(springEvolution.progressProperty())
+										val generation = EventStreams.valuesOf(springEvolution.generationProperty())
+										//										solutionChart = FitnessChart(generation, springEvolution.solutionsProperty()) {
+										//											synchronized(SortLock.lock) {
+										//												(this.behaviour as List<*>).sumByDouble { it as? Double ?: 0.0 }
+										//											}
+										//										}
+										ProgressFragment(generation, springEvolution.bestSolutionProperty(), springEvolution.bestProblemProperty()).openModal(modality = Modality.NONE)
+										thread = Thread {
+											val evolve = springEvolution.evolve(50, 50, 1000)
+											Platform.runLater {
+												(parent.parent.lookup("#a") as Label).text = "${evolve.genotype[0]}"
+												(parent.parent.lookup("#b") as Label).text = "${evolve.genotype[1]}"
+												(parent.parent.lookup("#c") as Label).text = "${evolve.genotype[2]}"
+												(parent.parent.lookup("#d") as Label).text = "${evolve.genotype[3]}"
+												text = "Evolve"
+												//												val s = SimulationState(SLIP(initial).copy(controller = springEvolution.bestSolution.phenotype as SpringController), springEvolution.bestProblem.phenotype as Environment)
+												//												SimpleStateFragment(s, setting).openModal()
+											}
+										}
+										thread?.start()
+									}
+									else {
+										thread?.interrupt()
+									}
+								}
+							}
+							progressBar {
+								id = "progress"
+								visibleProperty().bind(evolve.textProperty().isEqualTo("Stop"))
+							}
+							button("Show") {
+								visibleProperty().bind(evolve.textProperty().isEqualTo("Stop"))
+								setOnAction {
+									if (solutionChart != null) ChartFragment(solutionChart!!).openModal()
+								}
+							}
+						}
+
+						hbox {
+							alignment = Pos.CENTER_LEFT
+							label("a") {
+								style = "-fx-font-weight: bold;"
+								id = "a"
+								support.registerValidator(this, numberValidator)
+							}
+							label(" velocity.x + ")
+							label("b") {
+								style = "-fx-font-weight: bold;"
+								id = "b"
+								support.registerValidator(this, numberValidator)
+							}
+
+							label(" , ")
+							label("c") {
+								style = "-fx-font-weight: bold;"
+								id = "c"
+								support.registerValidator(this, numberValidator)
+							}
+							label(" compression + ")
+							label("d") {
+								style = "-fx-font-weight: bold;"
+								id = "d"
+								support.registerValidator(this, numberValidator)
+							}
+						}
+					}
+					EventStreams.combine(EventStreams.valuesOf(support.invalidProperty()), EventStreams.valuesOf(selectionModel.selectedItemProperty())).feedTo {
+						if (it._2.content == this) {
+							if (!it._1) {
+								val text1 = (lookup("#a") as Label).text
+								val text2 = (lookup("#b") as Label).text
+								val text3 = (lookup("#c") as Label).text
+								val text4 = (lookup("#d") as Label).text
+								val a = text1.toDouble()
+								val b = text2.toDouble()
+								val c = text3.toDouble()
+								val d = text4.toDouble()
+								deployable = SpringController ({ a * it.velocity.x + b }, { c * (1.0 - it.length / it.restLength) + d })
+							}
+							else {
+								deployable = null
+							}
+						}
+					}
+				}
+
+				tab("Terrain Novelty Coevolution", DecorationPane()) {
+					val support = ValidationSupport()
+					vbox {
+						spacing = 10.0
+						padding = Insets(10.0)
+						hbox {
+							spacing = 10.0
+							alignment = Pos.CENTER_LEFT
+							var thread: Thread? = null
+							var solutionChart: Chart? = null
+							val evolve = button("Evolve") {
+								setOnAction {
+									if (text == "Evolve") {
+										text = "Stop"
+										val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, TerrainNoveltyCoevolution.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
+											if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
+										}
+										val progress = (parent.lookup("#progress") as ProgressBar)
+										progress.progressProperty().bind(springEvolution.progressProperty())
+										val generation = EventStreams.valuesOf(springEvolution.generationProperty())
+										//										solutionChart = FitnessChart(generation, springEvolution.solutionsProperty()) {
+										//											synchronized(SortLock.lock) {
+										//												(this.behaviour as List<*>).sumByDouble { it as? Double ?: 0.0 }
+										//											}
+										//										}
+										ProgressFragment(generation, springEvolution.bestSolutionProperty(), springEvolution.bestProblemProperty()).openModal(modality = Modality.NONE)
+										thread = Thread {
+											val evolve = springEvolution.evolve(50, 50, 1000)
+											Platform.runLater {
+												(parent.parent.lookup("#a") as Label).text = "${evolve.genotype[0]}"
+												(parent.parent.lookup("#b") as Label).text = "${evolve.genotype[1]}"
+												(parent.parent.lookup("#c") as Label).text = "${evolve.genotype[2]}"
+												(parent.parent.lookup("#d") as Label).text = "${evolve.genotype[3]}"
+												text = "Evolve"
+												//												val s = SimulationState(SLIP(initial).copy(controller = springEvolution.bestSolution.phenotype as SpringController), springEvolution.bestProblem.phenotype as Environment)
+												//												SimpleStateFragment(s, setting).openModal()
+											}
+										}
+										thread?.start()
+									}
+									else {
+										thread?.interrupt()
+									}
+								}
+							}
+							progressBar {
+								id = "progress"
+								visibleProperty().bind(evolve.textProperty().isEqualTo("Stop"))
+							}
+							button("Show") {
+								visibleProperty().bind(evolve.textProperty().isEqualTo("Stop"))
+								setOnAction {
+									if (solutionChart != null) ChartFragment(solutionChart!!).openModal()
+								}
+							}
+						}
+
+						hbox {
+							alignment = Pos.CENTER_LEFT
+							label("a") {
+								style = "-fx-font-weight: bold;"
+								id = "a"
+								support.registerValidator(this, numberValidator)
+							}
+							label(" velocity.x + ")
+							label("b") {
+								style = "-fx-font-weight: bold;"
+								id = "b"
+								support.registerValidator(this, numberValidator)
+							}
+
+							label(" , ")
+							label("c") {
+								style = "-fx-font-weight: bold;"
+								id = "c"
+								support.registerValidator(this, numberValidator)
+							}
+							label(" compression + ")
+							label("d") {
+								style = "-fx-font-weight: bold;"
+								id = "d"
+								support.registerValidator(this, numberValidator)
+							}
+						}
+					}
+					EventStreams.combine(EventStreams.valuesOf(support.invalidProperty()), EventStreams.valuesOf(selectionModel.selectedItemProperty())).feedTo {
+						if (it._2.content == this) {
+							if (!it._1) {
+								val text1 = (lookup("#a") as Label).text
+								val text2 = (lookup("#b") as Label).text
+								val text3 = (lookup("#c") as Label).text
+								val text4 = (lookup("#d") as Label).text
+								val a = text1.toDouble()
+								val b = text2.toDouble()
+								val c = text3.toDouble()
+								val d = text4.toDouble()
+								deployable = SpringController ({ a * it.velocity.x + b }, { c * (1.0 - it.length / it.restLength) + d })
+							}
+							else {
+								deployable = null
 							}
 						}
 					}
 				}
 
 			}
+			hbox {
+				padding = Insets(10.0)
+				spacing = 10.0
+				button {
+					disableProperty().bind(deployableProperty().isNull)
+					text = "Deploy"
+					setOnAction {
+						// Build the state.
+						val slip = SLIP(initial).copy(controller = deployable!!)
+						val s = SimulationState(slip, environment)
 
+						// Set the controller for the viewer.
+						StateFragment(s, setting).openModal()
+					}
+				}
+				button {
+					disableProperty().bind(deployableProperty().isNull)
+					text = "Test"
+					setOnAction {
+						TestTerrains.terrains.forEach {
+							// Build the state.
+							val slip = SLIP(initial).copy(controller = deployable!!)
+							var s = SimulationState(slip, environment.copy(terrain = it))
+							for (i in 1..2000) {
+								s = SimulationController.step(s, Coevolution.setting)
+								if (s.slip.crashed) break
+							}
+							println("${if (s.slip.crashed) "X" else " "} ${s.slip.position.x} <- $it")
+						}
+					}
+				}
+			}
 		}
 
 	}

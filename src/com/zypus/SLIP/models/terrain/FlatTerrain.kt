@@ -10,4 +10,6 @@ package com.zypus.SLIP.models.terrain
 class FlatTerrain(val height: Double): Terrain {
 
 	override fun invoke(x: Double): Double = height
+
+	override fun toString(): String = "%.4f".format(height)
 }

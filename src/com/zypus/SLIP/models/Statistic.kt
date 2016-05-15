@@ -11,7 +11,7 @@ import java.io.File
  * @created 04/04/16
  */
 
-class Statistic(vararg titles: String) {
+class Statistic(vararg val titles: String) {
 
 	private val columns: Map<String, MutableList<Any>> = hashMapOf(*(titles.map { it to (arrayListOf<Any>() as MutableList<Any>) }).toTypedArray())
 	var rows = 0
@@ -47,11 +47,13 @@ class Statistic(vararg titles: String) {
 
 	fun toCSV(): String {
 		val builder = StringBuilder()
-		val keys = columns.keys.filter { !it.startsWith("_") }
+		val keys = titles.filter { !it.startsWith("_") }
 		builder.appendln(keys.joinToString())
 		(0..rows-1).forEachIndexed { i, v -> builder.appendln(keys.map { k -> columns[k]?.getOrNull(i) }.joinToString {
-			if (it is Boolean)  {
+			if (it is Boolean) {
 				if (it) "1" else "0"
+			} else if (it == null) {
+				""
 			} else {
 				it.toString()
 			}

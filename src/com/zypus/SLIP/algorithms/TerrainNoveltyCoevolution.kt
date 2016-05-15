@@ -161,17 +161,12 @@ object TerrainNoveltyCoevolution {
 			}
 
 			select = { population ->
-				if (random.nextDouble() < 0.02) {
-					val rankedPopulation = population.sortedByDescending { e ->
-						val sum = e.behaviour!!.sum()
-						val x = population.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
-						Math.abs(x!!.behaviour!!.sum() - sum)
-					}
-					Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5) to rankedPopulation.linearSelection(1.5)))
+				val rankedPopulation = population.sortedByDescending { e ->
+					val sum = e.behaviour!!.sum()
+					val x = population.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
+					Math.abs(x!!.behaviour!!.sum() - sum)
 				}
-				else {
-					null
-				}
+				Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5) to rankedPopulation.linearSelection(1.5)))
 			}
 
 			reproduce = { mother, father ->
@@ -202,7 +197,11 @@ object TerrainNoveltyCoevolution {
 				evolutionState ->
 				synchronized(SortLock.lock) {
 					val sortedSolutions = evolutionState.solutions.sortedByDescending { it.behaviour!!.sum() }
-					val sortedProblems = evolutionState.problems.sortedByDescending { it.behaviour!!.sum() }
+					val sortedProblems = evolutionState.problems.sortedByDescending { e ->
+						val sum = e.behaviour!!.sum()
+						val x = evolutionState.problems.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
+						Math.abs(x!!.behaviour!!.sum() - sum)
+					}
 					//					val totalSolutionFitness = sortedSolutions.sumByDouble { it.behaviour!!.sum() }
 					//					val totalProblemFitness = sortedProblems.sumByDouble { it.behaviour!!.sum() }
 					evolutionState.solutions.filter { it.behaviour!!.size == 0 }.flatMap {
@@ -241,7 +240,7 @@ object TerrainNoveltyCoevolution {
 				}
 				val x = state.slip.position.x
 				/* Positive feedback for the solution, negative feedback for the problem. */
-				x to (if (x > 200) -x else -x - 5000)
+				x to -x
 			}
 
 		}
