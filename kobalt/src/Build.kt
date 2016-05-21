@@ -1,10 +1,8 @@
-
 import com.beust.kobalt.plugin.packaging.assemble
 import com.beust.kobalt.project
 import com.beust.kobalt.repos
 
-val repos = repos("https://oss.sonatype.org/content/repositories/snapshots/")
-
+val repos = repos()
 
 val p = project {
 
@@ -22,8 +20,10 @@ val p = project {
     }
 
     dependencies {
-        compile("no.tornado:tornadofx:1.3.2")
-        compile("org.reactfx:reactfx:2.0-SNAPSHOT")
+        compile("no.tornado:tornadofx:1.4.1")
+        compile("org.reactfx:reactfx:2.0-M5")
+        compile("org.controlsfx:controlsfx:8.40.10")
+        compile("com.fasterxml.jackson.module:jackson-module-kotlin:2.7.1-2")
     }
 
     dependenciesTest {
@@ -32,7 +32,7 @@ val p = project {
     }
 
     assemble {
-        jar {
-        }
+		jar {
+		}
     }
 }
