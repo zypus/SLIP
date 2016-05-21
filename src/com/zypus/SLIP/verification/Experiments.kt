@@ -1,15 +1,16 @@
 package com.zypus.SLIP.verification
 
-import com.zypus.SLIP.algorithms.Coevolution
-import com.zypus.SLIP.algorithms.GenericSpringEvolution
-import com.zypus.SLIP.algorithms.SLIPNoveltyCoevolution
-import com.zypus.SLIP.algorithms.TerrainNoveltyCoevolution
+import com.zypus.SLIP.algorithms.*
 import com.zypus.SLIP.algorithms.genetic.EvolutionState
 import com.zypus.SLIP.controllers.StatisticDelegate
 import com.zypus.SLIP.models.Environment
 import com.zypus.SLIP.models.SpringController
 import com.zypus.SLIP.models.Statistic
+import com.zypus.SLIP.verification.benchmark.Benchmark
+import com.zypus.SLIP.verification.benchmark.ControllerSerializer
+import com.zypus.SLIP.verification.benchmark.TerrainSerializer
 import org.reactfx.EventStreams
+import java.io.File
 import kotlin.system.measureTimeMillis
 
 /**
@@ -27,36 +28,47 @@ fun main(args: Array<String>) {
 
 	var totalTime = 0L;
 	var passedRuns = 0;
-	val runs = 100;
+	val runs = 20;
 
-	for ((filename, rule) in mapOf("tnc" to TerrainNoveltyCoevolution.rule, "snc" to SLIPNoveltyCoevolution.rule, "c" to Coevolution.rule )) {
+	val times: MutableList<Long> = arrayListOf()
+
+	val algorithms = mapOf("tnc6." to TerrainNoveltyCoevolution.rule, "snc6." to SLIPNoveltyCoevolution.rule, "c6." to Coevolution.rule, "dc6." to DiversityCoevolution.rule)
+	for ((filename, rule) in algorithms) {
+		val solutionWriter = File("results/${filename}solutions.txt").printWriter()
+		val problemWriter = File("results/${filename}problems.txt").printWriter()
 		val evolution = GenericSpringEvolution(initial, environment, setting, rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
 			if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
 		}
 		EventStreams.valuesOf(evolution.progressProperty()).feedTo {
-			println("%03.1f".format(it * 100))
+			println("%03.1f %%".format(it * 100))
+			if (it == 1.0) {
+				evolution.solutionsProperty().get().forEach { ControllerSerializer.serialize(solutionWriter, it.genotype as List<Double>) }
+				evolution.problemsProperty().get().forEach { TerrainSerializer.serialize(problemWriter, (it.phenotype as Environment).terrain) }
+			}
 		}
 
 		for (r in 1..runs) {
 
 			println("Beginning run $r")
 
-			totalTime += measureTimeMillis {
+			val time = measureTimeMillis {
 				evolution.evolve(50, 50, 1000, object : StatisticDelegate<List<Double>, SpringController, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
 					override fun initialize(solutionCount: Int, problemCount: Int): Statistic {
-						var columns: MutableList<String> = arrayListOf("generation")
+						val columns: MutableList<String> = arrayListOf("generation")
 						repeat(solutionCount + 1) {
 							columns.add("s$it fitness")
 							columns.add("s$it a")
 							columns.add("s$it b")
 							columns.add("s$it c")
 							columns.add("s$it d")
+							columns.add("s$it benchmark")
 						}
 						repeat(problemCount + 1) {
 							columns.add("p$it fitness")
 							columns.add("p$it height")
 							columns.add("p$it spikiness")
 							columns.add("p$it ascension")
+							columns.add("p$it benchmark")
 						}
 						return Statistic(*columns.toTypedArray())
 					}
@@ -76,31 +88,94 @@ fun main(args: Array<String>) {
 							row["p$i spikiness"] = TerrainDifficulty.spikiness(entity.phenotype.terrain)
 							row["p$i ascension"] = TerrainDifficulty.ascension(entity.phenotype.terrain)
 						}
+						if (generation % 100 == 0) {
+							println("Benchmarking generation $generation ...")
+							/* Benchmark solutions */
+							run {
+								val processors = Runtime.getRuntime().availableProcessors()
+								val subtaskSize = state.solutions.size / processors
+								val results = Array(processors) {
+									listOf<Double>()
+								}
+								(1..processors).map {
+									val subtask = if (it == processors) {
+										state.solutions.subList((it - 1) * subtaskSize, state.solutions.size)
+									}
+									else {
+										state.solutions.subList((it - 1) * subtaskSize, it * subtaskSize)
+									}
+									val task = Thread {
+										results[it - 1] = subtask.map { entity ->
+											Benchmark.benchmark(entity.phenotype)
+										}
+									}
+									task.start()
+									task
+								}.forEach {
+									try {
+										it.join()
+									}
+									catch (e: InterruptedException) {
+									}
+								}
+								results.flatMap { it }.forEachIndexed { i, b ->
+									row["s$i benchmark"] = b
+								}
+							}
+							/* Benchmark problems */
+							run {
+								val processors = Runtime.getRuntime().availableProcessors()
+								val subtaskSize = state.problems.size / processors
+								val results = Array(processors) {
+									listOf<Double>()
+								}
+								(1..processors).map {
+									val subtask = if (it == processors) {
+										state.problems.subList((it - 1) * subtaskSize, state.problems.size)
+									}
+									else {
+										state.problems.subList((it - 1) * subtaskSize, it * subtaskSize)
+									}
+									val task = Thread {
+										results[it - 1] = subtask.map { entity ->
+											Benchmark.benchmark(entity.phenotype.terrain)
+										}
+									}
+									task.start()
+									task
+								}.forEach {
+									try {
+										it.join()
+									}
+									catch (e: InterruptedException) {
+									}
+								}
+								results.flatMap { it }.forEachIndexed { i, b ->
+									row["p$i benchmark"] = b
+								}
+							}
+						}
 					}
 
 					override fun save(stats: Statistic) {
-						stats.writeToFile("$filename$r.csv")
+						stats.writeToFile("benchedExperiments/$filename$r.csv")
 					}
 
 				})
 			}
 			passedRuns++
+			totalTime += time
+			if (times.size > 4) times.removeAt(0)
+			times.add(time)
 
 			println("Run $r completed")
-			println("Remaining time ${((totalTime/passedRuns*(3*runs-passedRuns))/60000).toInt()}m")
+			println("Remaining time ${(((times.sum().toDouble()/times.size)*(algorithms.size*runs-passedRuns))/60000).toInt()}m")
 
 		}
 
+		solutionWriter.flush()
+		problemWriter.flush()
+
 	}
-//
-//	TestTerrains.terrains.forEach {
-//		// Build the state.
-//		val slip = SLIP(initial).copy(controller = entity.phenotype)
-//		var s = SimulationState(slip, environment.copy(terrain = it))
-//		for (i in 1..2000) {
-//			s = SimulationController.step(s, setting)
-//			if (s.slip.crashed) break
-//		}
-//		println("${if (s.slip.crashed) "X" else " "} ${s.slip.position.x} <- $it")
-//	}
+	println("Total time taken ${(totalTime/60000).toInt()}m")
 }

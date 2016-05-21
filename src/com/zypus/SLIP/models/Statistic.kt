@@ -13,7 +13,7 @@ import java.io.File
 
 class Statistic(vararg val titles: String) {
 
-	private val columns: Map<String, MutableList<Any>> = hashMapOf(*(titles.map { it to (arrayListOf<Any>() as MutableList<Any>) }).toTypedArray())
+	private val columns: Map<String, MutableList<Any?>> = hashMapOf(*(titles.map { it to (arrayListOf<Any?>() as MutableList<Any?>) }).toTypedArray())
 	var rows = 0
 
 	private var _currentRow: Row? = null
@@ -23,11 +23,12 @@ class Statistic(vararg val titles: String) {
 
 	fun newRow(): Row {
 		_currentRow = Row((_currentRow?.index ?: -1) + 1, columns)
+		columns.values.forEach { it.add(null) }
 		rows++
 		return _currentRow!!
 	}
 
-	class Row(val index: Int, val columns: Map<String, MutableList<Any>>) {
+	class Row(val index: Int, val columns: Map<String, MutableList<Any?>>) {
 
 		fun double(key: String) = if (this[key] is Number) (this[key] as Number).toDouble() else null
 
@@ -39,7 +40,7 @@ class Statistic(vararg val titles: String) {
 			return columns[key]?.getOrNull(index)
 		}
 
-		operator fun set(key:String, value: Any): Any {
+		operator fun set(key:String, value: Any?): Any? {
 			val list = columns[key]!!
 			return if (list.size > index) list.set(index, value) else list.add(value)
 		}
@@ -49,7 +50,10 @@ class Statistic(vararg val titles: String) {
 		val builder = StringBuilder()
 		val keys = titles.filter { !it.startsWith("_") }
 		builder.appendln(keys.joinToString())
-		(0..rows-1).forEachIndexed { i, v -> builder.appendln(keys.map { k -> columns[k]?.getOrNull(i) }.joinToString {
+		(0..rows-1).forEachIndexed { row, v ->
+			builder.appendln(keys.map { k ->
+				columns[k]?.getOrNull(row)
+		}.joinToString {
 			if (it is Boolean) {
 				if (it) "1" else "0"
 			} else if (it == null) {

@@ -7,7 +7,7 @@ package com.zypus.SLIP.models.terrain
  *
  * @created 21/04/16
  */
-class SinusTerrain(val frequency: Double, val amplitude: Double, val shift: Double = 0.0, val height: Double = 0.0): Terrain {
+data class SinusTerrain(val frequency: Double, val amplitude: Double, val shift: Double = 0.0, val height: Double = 0.0): Terrain {
 
 	override fun invoke(x: Double) = height + amplitude * Math.sin(shift + frequency * x)
 

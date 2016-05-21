@@ -7,7 +7,7 @@ package com.zypus.SLIP.models.terrain
  *
  * @created 21/04/16
  */
-class FlatTerrain(val height: Double): Terrain {
+data class FlatTerrain(val height: Double): Terrain {
 
 	override fun invoke(x: Double): Double = height
 

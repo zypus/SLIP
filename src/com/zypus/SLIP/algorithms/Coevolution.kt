@@ -11,6 +11,7 @@ import com.zypus.SLIP.models.terrain.CompositeTerrain
 import com.zypus.SLIP.models.terrain.FlatTerrain
 import com.zypus.SLIP.models.terrain.SinusTerrain
 import com.zypus.SLIP.models.terrain.Terrain
+import com.zypus.utilities.Vector2
 import java.lang.Math.PI
 import java.util.*
 
@@ -81,7 +82,7 @@ object Coevolution {
 				}
 			}
 
-			mapping = { gen -> SpringController ({ slip -> gen[0] * slip.velocity.x + gen[1]}, {slip -> gen[2] * (1.0 - (slip.length / slip.restLength)) + gen[3] }) }
+			mapping = { gen -> SpringController ({ slip -> gen[0] * slip.velocity.x + gen[1] }, { slip -> gen[2] * (1.0 - (slip.length / slip.restLength)) + gen[3] }) }
 
 			select = { population ->
 				val rankedPopulation = population.sortedByDescending { it.behaviour!!.sum() }
@@ -117,7 +118,7 @@ object Coevolution {
 
 		/* MARK: Problem */
 
-		val sinusComponentCount = 3
+		val sinusComponentCount = 6
 
 		val problemBounds = arrayListOf(
 				/* Flat component */
@@ -161,12 +162,8 @@ object Coevolution {
 			}
 
 			select = { population ->
-				if (random.nextDouble() < 0.02) {
-					val rankedPopulation = population.sortedByDescending { it.behaviour!!.sum() }
-					Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5) to rankedPopulation.linearSelection(1.5)))
-				} else {
-					null
-				}
+				val rankedPopulation = population.sortedByDescending { it.behaviour!!.sum() }
+				Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5) to rankedPopulation.linearSelection(1.5)))
 			}
 
 			reproduce = { mother, father ->
@@ -229,14 +226,15 @@ object Coevolution {
 
 			evaluate = {
 				controller, environment ->
-				var state = SimulationState(SLIP(initial).copy(controller = controller), environment)
+				val ix = random.nextDouble() * 40.0 - 20.0
+				var state = SimulationState(SLIP(Initial(Vector2(ix, 200))).copy(controller = controller), environment)
 				for (i in 1..2000) {
 					state = SimulationController.step(state, setting)
 					if (state.slip.crashed) break
 				}
-				val x = state.slip.position.x
+				val x = state.slip.position.x - ix
 				/* Positive feedback for the solution, negative feedback for the problem. */
-				x to (if (x > 200) -x else -x-5000)
+				x to -x
 			}
 
 		}

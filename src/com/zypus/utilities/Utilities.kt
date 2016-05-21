@@ -1,5 +1,6 @@
 package com.zypus.utilities
 
+import java.lang.Math.min
 import java.lang.Math.sqrt
 
 /**
@@ -36,4 +37,32 @@ fun String.pickRandom(count: Int = 1): String {
 
 inline fun String.pickRandom(count: Int = 1, crossinline random: () -> Double): String {
     return (1..count).map { this[Math.round((length - 1) * random()).toInt()] }.joinToString(separator = "")
+}
+
+inline fun <T, R> List<T>.mapParallel(crossinline function: (T) -> R): List<R> {
+    val processors = min(Runtime.getRuntime().availableProcessors(), this.size)
+    val subtaskSize = this.size / processors
+    val results = Array(processors) {
+        listOf<R>()
+    }
+    (1..processors).map {
+        val subtask = if (it == processors) {
+            this.subList((it - 1) * subtaskSize, this.size)
+        }
+        else {
+            this.subList((it - 1) * subtaskSize, it * subtaskSize)
+        }
+        val task = Thread {
+            results[it - 1] = subtask.map(function)
+        }
+        task.start()
+        task
+    }.forEach {
+        try {
+            it.join()
+        }
+        catch (e: InterruptedException) {
+        }
+    }
+    return results.flatMap { it }
 }

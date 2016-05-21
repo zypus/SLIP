@@ -4,6 +4,7 @@ import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.SimulationSetting
 import com.zypus.SLIP.models.SimulationState
 import com.zypus.gui.ResizableCanvas
+import com.zypus.utilities.Vector2
 import javafx.scene.layout.VBox
 import org.reactfx.EventStreams
 import org.reactfx.Subscription
@@ -34,7 +35,7 @@ class SimpleStateFragment(var state: SimulationState, setting: SimulationSetting
 					} else {
 						s = SimulationController.step(s, setting)
 						gc.drawSimulationState(s)
-						if (s.slip.crashed) s = state
+						if (s.slip.crashed) s = state.copy(slip = state.slip.copy(position = Vector2(Math.random()*40.0-20.0,200)))
 					}
 				}
 	}

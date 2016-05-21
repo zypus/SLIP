@@ -1,5 +1,6 @@
 package com.zypus.SLIP.algorithms.genetic
 
+import com.zypus.utilities.mapParallel
 import com.zypus.utilities.pickRandom
 
 /**
@@ -50,32 +51,10 @@ class EvolutionRules<SG : Any, SP : Any, SB : Any, SBC : Any, PG : Any, PP : Any
 
 	fun matchAndEvaluate(evolutionState: EvolutionState<SG, SP, SB, SBC, PG, PP, PB, PBC>) {
 		val matches = tester.matching(evolutionState)
-		val processors = Runtime.getRuntime().availableProcessors()
-		val subtaskSize = matches.size/processors
-		val results = Array(processors) {
-			listOf<Pair<Pair<SB,PB>,Pair<Entity<SG,SP,SB,SBC>,Entity<PG,PP,PB,PBC>>>>()
-		}
-		(1..processors).map {
-			val subtask = if (it == processors) {
-				matches.subList((it-1)*subtaskSize, matches.size)
-			}
-			else {
-				matches.subList((it-1)*subtaskSize, it*subtaskSize)
-			}
-			val task = Thread {
-				results[it-1] = subtask.map { tester.evaluation(it.first.phenotype, it.second.phenotype) }.zip(subtask)
-			}
-			task.start()
-			task
-		}.forEach {
-			try {
-				it.join()
-			} catch (e: InterruptedException) {
-				Thread.currentThread().interrupt()
-				return
-			}
-		}
-		results.flatMap { it }.forEach {
+
+		val results = matches.mapParallel { tester.evaluation(it.first.phenotype, it.second.phenotype) }.zip(matches)
+
+		results.forEach {
 			val (behaviour, match) = it
 			val (solutionBehaviour, problemBehaviour) = behaviour
 			val (solution, problem) = match

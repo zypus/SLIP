@@ -23,7 +23,7 @@ import java.util.*
  * @created 27/04/16
  */
 
-object TerrainNoveltyCoevolution {
+object DiversityCoevolution {
 
 	val initial = Initial()
 	val setting = SimulationSetting()
@@ -85,7 +85,11 @@ object TerrainNoveltyCoevolution {
 			mapping = { gen -> SpringController ({ slip -> gen[0] * slip.velocity.x + gen[1] }, { slip -> gen[2] * (1.0 - (slip.length / slip.restLength)) + gen[3] }) }
 
 			select = { population ->
-				val rankedPopulation = population.sortedByDescending { it.behaviour!!.sum() }
+				val rankedPopulation = population.sortedByDescending { e ->
+					val sum = e.behaviour!!.sum()
+					val x = population.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
+					Math.abs(x!!.behaviour!!.sum() - sum)
+				}
 				Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5) to rankedPopulation.linearSelection(1.5)))
 			}
 
@@ -197,7 +201,11 @@ object TerrainNoveltyCoevolution {
 			match = {
 				evolutionState ->
 				synchronized(SortLock.lock) {
-					val sortedSolutions = evolutionState.solutions.sortedByDescending { it.behaviour!!.sum() }
+					val sortedSolutions = evolutionState.solutions.sortedByDescending {e ->
+						val sum = e.behaviour!!.sum()
+						val x = evolutionState.problems.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
+						Math.abs(x!!.behaviour!!.sum() - sum)
+					}
 					val sortedProblems = evolutionState.problems.sortedByDescending { e ->
 						val sum = e.behaviour!!.sum()
 						val x = evolutionState.problems.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
