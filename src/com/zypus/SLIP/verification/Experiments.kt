@@ -33,7 +33,7 @@ fun main(args: Array<String>) {
 
 	val times: MutableList<Long> = arrayListOf()
 
-	val algorithms = mapOf("tncm." to TerrainNoveltyCoevolution3.rule, "sncm." to SLIPNoveltyCoevolution3.rule, "cm." to Coevolution3.rule, "dcm." to DiversityCoevolution3.rule)
+	val algorithms = mapOf("tncm2." to TerrainNoveltyCoevolution3.rule, "sncm2." to SLIPNoveltyCoevolution3.rule, "cm2." to Coevolution3.rule, "dcm2." to DiversityCoevolution3.rule)
 	for ((filename, rule) in algorithms) {
 		val solutionWriter = File("results/${filename}solutions.txt").printWriter()
 		val problemWriter = File("results/${filename}problems.txt").printWriter()

@@ -83,8 +83,12 @@ object SLIPNoveltyCoevolution3 {
 				}
 			}
 
+			val noiseStrength = 10
+
+			fun Double.withNoise(): Double = this + random.nextGaussian() * noiseStrength
+
 			mapping = { gen ->
-				SLIP(restLength = gen[4], mass = gen[5], radius = 10 * gen[5], controller = SpringController ({ slip -> gen[0] * slip.velocity.x + gen[1] }, { slip -> gen[2] * (1.0 - (slip.length / slip.restLength)) + gen[3] }))
+				SLIP(restLength = gen[4], mass = gen[5], radius = 10 * gen[5], controller = SpringController ({ slip -> gen[0] * slip.velocity.x.withNoise() + gen[1] }, { slip -> gen[2] * (1.0 - (slip.length.withNoise() / slip.restLength)) + gen[3] }))
 			}
 
 			select = { population ->
