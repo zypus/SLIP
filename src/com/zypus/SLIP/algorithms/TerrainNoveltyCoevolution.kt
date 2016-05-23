@@ -82,8 +82,12 @@ object TerrainNoveltyCoevolution {
 				}
 			}
 
-			mapping = { gen -> SpringController ({ slip -> gen[0] * slip.velocity.x + gen[1] }, { slip -> gen[2] * (1.0 - (slip.length / slip.restLength)) + gen[3] }) }
+			val noiseStrength = 10
 
+			fun Double.withNoise(): Double = this + random.nextGaussian() * noiseStrength
+
+			mapping = { gen -> SpringController ({ slip -> gen[0] * slip.velocity.x.withNoise() + gen[1] }, { slip -> gen[2] * (1.0 - (noiseStrength * slip.length.withNoise() / slip.restLength)) + gen[3] }) }
+			
 			select = { population ->
 				val rankedPopulation = population.sortedByDescending { it.behaviour!!.sum() }
 				Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5) to rankedPopulation.linearSelection(1.5)))
@@ -118,7 +122,7 @@ object TerrainNoveltyCoevolution {
 
 		/* MARK: Problem */
 
-		val sinusComponentCount = 6
+		val sinusComponentCount = 3
 
 		val problemBounds = arrayListOf(
 				/* Flat component */

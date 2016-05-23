@@ -137,7 +137,6 @@ class SimulationController {
 					var count = 0
 					while (abs(tip.y - terrain(tip.x)) >= eps) {
 						if (count++ > 100) {
-							println("Flight phase: Breaking out of loop.")
 							break
 						}
 						if (tip.y < terrain(tip.x) ) {
