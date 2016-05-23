@@ -49,6 +49,13 @@ object Benchmark {
 		}
 	}
 
+	fun benchmark(slip: SLIP): Double {
+		return evaluate(slip, terrainBase) {
+			state, off ->
+			if (state.slip.crashed) 0.0 else state.slip.position.x - off
+		}
+	}
+
 	fun benchmark(terrain: Terrain): Double {
 		return evaluate(terrain, controllerBase) {
 			state, off ->
@@ -68,6 +75,22 @@ object Benchmark {
 					if (state.slip.crashed) break
 				}
 				eval(state,it.toDouble())
+			} / 3.0
+		}
+	}
+
+	fun evaluate(slip: SLIP, terrains: List<Terrain>, eval: (SimulationState, Double) -> Double): Double {
+		return terrains.sumByDouble {
+			val environment = Environment(terrain = it)
+			(-10..10 step 10).sumByDouble {
+				val initial = Initial(Vector2(it, 200))
+				val s = slip.copy(position = initial.position, velocity = initial.velocity)
+				var state = SimulationState(s, environment)
+				for (i in 1..1000) {
+					state = SimulationController.step(state, setting)
+					if (state.slip.crashed) break
+				}
+				eval(state, it.toDouble())
 			} / 3.0
 		}
 	}

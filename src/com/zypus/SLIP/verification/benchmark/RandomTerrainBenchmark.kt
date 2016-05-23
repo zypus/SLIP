@@ -1,9 +1,6 @@
 package com.zypus.SLIP.verification.benchmark
 
-import com.zypus.SLIP.models.terrain.CompositeTerrain
-import com.zypus.SLIP.models.terrain.FlatTerrain
-import com.zypus.SLIP.models.terrain.SinusTerrain
-import com.zypus.SLIP.models.terrain.Terrain
+import com.zypus.SLIP.models.terrain.*
 import java.io.File
 import java.io.PrintWriter
 import java.io.Writer
@@ -71,6 +68,9 @@ object TerrainSerializer {
 					println("c ${terrain.components.size}")
 					terrain.components.forEach { serialize(writer, it) }
 				}
+				is MidpointTerrain -> {
+					println("m ${terrain.exp} ${terrain.height} ${terrain.roughness} ${terrain.displace}")
+				}
 			}
 		}
 		printWriter.flush()
@@ -90,6 +90,9 @@ object TerrainSerializer {
 					CompositeTerrain(*(1..line[1].toInt()).map {
 						deserialize(lines)!!
 					}.toTypedArray())
+				}
+				"m" -> {
+					MidpointTerrain(line[1].toInt(), line[2].toDouble(), line[3].toDouble(), line[4].toDouble())
 				}
 				else -> null
 			}

@@ -4,8 +4,9 @@ import com.zypus.SLIP.algorithms.*
 import com.zypus.SLIP.algorithms.genetic.EvolutionState
 import com.zypus.SLIP.controllers.StatisticDelegate
 import com.zypus.SLIP.models.Environment
-import com.zypus.SLIP.models.SpringController
+import com.zypus.SLIP.models.SLIP
 import com.zypus.SLIP.models.Statistic
+import com.zypus.SLIP.models.terrain.MidpointTerrain
 import com.zypus.SLIP.verification.benchmark.Benchmark
 import com.zypus.SLIP.verification.benchmark.ControllerSerializer
 import com.zypus.SLIP.verification.benchmark.TerrainSerializer
@@ -32,7 +33,7 @@ fun main(args: Array<String>) {
 
 	val times: MutableList<Long> = arrayListOf()
 
-	val algorithms = mapOf("tnc6." to TerrainNoveltyCoevolution.rule, "snc6." to SLIPNoveltyCoevolution.rule, "c6." to Coevolution.rule, "dc6." to DiversityCoevolution.rule)
+	val algorithms = mapOf("tncm." to TerrainNoveltyCoevolution3.rule, "sncm." to SLIPNoveltyCoevolution3.rule, "cm." to Coevolution3.rule, "dcm." to DiversityCoevolution3.rule)
 	for ((filename, rule) in algorithms) {
 		val solutionWriter = File("results/${filename}solutions.txt").printWriter()
 		val problemWriter = File("results/${filename}problems.txt").printWriter()
@@ -40,7 +41,7 @@ fun main(args: Array<String>) {
 			if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
 		}
 		EventStreams.valuesOf(evolution.progressProperty()).feedTo {
-			println("%03.1f %%".format(it * 100))
+			println("%03.1f%%".format(it * 100))
 			if (it == 1.0) {
 				evolution.solutionsProperty().get().forEach { ControllerSerializer.serialize(solutionWriter, it.genotype as List<Double>) }
 				evolution.problemsProperty().get().forEach { TerrainSerializer.serialize(problemWriter, (it.phenotype as Environment).terrain) }
@@ -52,7 +53,7 @@ fun main(args: Array<String>) {
 			println("Beginning run $r")
 
 			val time = measureTimeMillis {
-				evolution.evolve(50, 50, 1000, object : StatisticDelegate<List<Double>, SpringController, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
+				evolution.evolve(50, 50, 1500, object : StatisticDelegate<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
 					override fun initialize(solutionCount: Int, problemCount: Int): Statistic {
 						val columns: MutableList<String> = arrayListOf("generation")
 						repeat(solutionCount + 1) {
@@ -61,11 +62,16 @@ fun main(args: Array<String>) {
 							columns.add("s$it b")
 							columns.add("s$it c")
 							columns.add("s$it d")
+							columns.add("s$it l")
+							columns.add("s$it m")
 							columns.add("s$it benchmark")
 						}
 						repeat(problemCount + 1) {
 							columns.add("p$it fitness")
 							columns.add("p$it height")
+							columns.add("p$it power")
+							columns.add("p$it roughness")
+							columns.add("p$it displace")
 							columns.add("p$it spikiness")
 							columns.add("p$it ascension")
 							columns.add("p$it benchmark")
@@ -73,7 +79,7 @@ fun main(args: Array<String>) {
 						return Statistic(*columns.toTypedArray())
 					}
 
-					override fun update(row: Statistic.Row, generation: Int, state: EvolutionState<List<Double>, SpringController, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>>) {
+					override fun update(row: Statistic.Row, generation: Int, state: EvolutionState<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>>) {
 						row["generation"] = generation
 						state.solutions.forEachIndexed { i, entity ->
 							row["s$i fitness"] = entity.behaviour!!.sum()
@@ -81,10 +87,16 @@ fun main(args: Array<String>) {
 							row["s$i b"] = entity.genotype[1]
 							row["s$i c"] = entity.genotype[2]
 							row["s$i d"] = entity.genotype[3]
+							row["s$i l"] = entity.genotype[4]
+							row["s$i m"] = entity.genotype[5]
 						}
 						state.problems.forEachIndexed { i, entity ->
 							row["p$i fitness"] = entity.behaviour!!.sum()
-							row["p$i height"] = TerrainDifficulty.meanHeight(entity.phenotype.terrain)
+							val terrain = entity.phenotype.terrain as MidpointTerrain
+							row["p$i height"] = terrain.height
+							row["p$i power"] = terrain.power
+							row["p$i roughness"] = terrain.roughness
+							row["p$i displace"] = terrain.displace
 							row["p$i spikiness"] = TerrainDifficulty.spikiness(entity.phenotype.terrain)
 							row["p$i ascension"] = TerrainDifficulty.ascension(entity.phenotype.terrain)
 						}

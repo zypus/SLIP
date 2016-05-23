@@ -39,7 +39,7 @@ class SimulationView : View() {
 
 	override val root = VBox()
 
-	var deployable by property<SpringController?>(null)
+	var deployable by property<SLIP?>(null)
 	fun deployableProperty() = getProperty(SimulationView::deployable)
 
 	init {
@@ -94,7 +94,7 @@ class SimulationView : View() {
 								if (!it) {
 									val text = (parent.lookup("#angle") as TextField).text
 									val a = text.toDouble()
-									deployable = SpringController ({ a })
+									deployable = SLIP(initial).copy(controller = SpringController ({ a }))
 								} else {
 									deployable = null
 								}
@@ -106,7 +106,7 @@ class SimulationView : View() {
 							if (!it._1) {
 								val text = (lookup("#angle") as TextField).text
 								val a = text.toDouble()
-								deployable = SpringController ({ a })
+								deployable = SLIP(initial).copy(controller = SpringController ({ a }))
 							}
 							else {
 								deployable = null
@@ -142,7 +142,7 @@ class SimulationView : View() {
 								val text2 = (lookup("#b") as TextField).text
 								val a = text1.toDouble()
 								val b = text2.toDouble()
-								deployable = SpringController ({ a * it.velocity.x + b })
+								deployable = SLIP(initial).copy(controller = SpringController ({ a * it.velocity.x + b }))
 							}
 							else {
 								deployable = null
@@ -193,7 +193,7 @@ class SimulationView : View() {
 								val text2 = (lookup("#b") as Label).text
 								val a = text1.toDouble()
 								val b = text2.toDouble()
-								deployable = SpringController ({ a * it.velocity.x + b })
+								deployable = SLIP(initial).copy(controller = SpringController ({ a * it.velocity.x + b }))
 							}
 							else {
 								deployable = null
@@ -293,7 +293,7 @@ class SimulationView : View() {
 								val b = text2.toDouble()
 								val c = text3.toDouble()
 								val d = text4.toDouble()
-								deployable = SpringController ({ a * it.velocity.x + b }, { c * (1.0 - it.length / it.restLength) + d })
+								deployable = SLIP(initial).copy(controller = SpringController ({ a * it.velocity.x + b }, { c * (1.0 - it.length / it.restLength) + d }))
 							}
 							else {
 								deployable = null
@@ -306,6 +306,9 @@ class SimulationView : View() {
 
 				tab("Coevolution", DecorationPane()) {
 					val support = ValidationSupport()
+					val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, Coevolution3.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
+						if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
+					}
 					vbox {
 						spacing = 10.0
 						padding = Insets(10.0)
@@ -318,9 +321,7 @@ class SimulationView : View() {
 								setOnAction {
 									if (text == "Evolve") {
 										text = "Stop"
-										val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, Coevolution.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
-											if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
-										}
+
 										val progress = (parent.lookup("#progress") as ProgressBar)
 										progress.progressProperty().bind(springEvolution.progressProperty())
 										val generation = EventStreams.valuesOf(springEvolution.generationProperty())
@@ -400,7 +401,7 @@ class SimulationView : View() {
 								val b = text2.toDouble()
 								val c = text3.toDouble()
 								val d = text4.toDouble()
-								deployable = SpringController ({ a * it.velocity.x + b }, { c * (1.0 - it.length / it.restLength) + d })
+								deployable = springEvolution.bestSolution.phenotype as SLIP
 							}
 							else {
 								deployable = null
@@ -411,6 +412,9 @@ class SimulationView : View() {
 
 				tab("SLIP Novelty Coevolution", DecorationPane()) {
 					val support = ValidationSupport()
+					val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, SLIPNoveltyCoevolution3.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
+						if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
+					}
 					vbox {
 						spacing = 10.0
 						padding = Insets(10.0)
@@ -423,9 +427,7 @@ class SimulationView : View() {
 								setOnAction {
 									if (text == "Evolve") {
 										text = "Stop"
-										val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, SLIPNoveltyCoevolution.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
-											if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
-										}
+
 										val progress = (parent.lookup("#progress") as ProgressBar)
 										progress.progressProperty().bind(springEvolution.progressProperty())
 										val generation = EventStreams.valuesOf(springEvolution.generationProperty())
@@ -505,7 +507,7 @@ class SimulationView : View() {
 								val b = text2.toDouble()
 								val c = text3.toDouble()
 								val d = text4.toDouble()
-								deployable = SpringController ({ a * it.velocity.x + b }, { c * (1.0 - it.length / it.restLength) + d })
+								deployable = springEvolution.bestSolution.phenotype as SLIP
 							}
 							else {
 								deployable = null
@@ -516,6 +518,9 @@ class SimulationView : View() {
 
 				tab("Terrain Novelty Coevolution", DecorationPane()) {
 					val support = ValidationSupport()
+					val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, TerrainNoveltyCoevolution3.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
+						if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
+					}
 					vbox {
 						spacing = 10.0
 						padding = Insets(10.0)
@@ -528,9 +533,7 @@ class SimulationView : View() {
 								setOnAction {
 									if (text == "Evolve") {
 										text = "Stop"
-										val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, TerrainNoveltyCoevolution.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
-											if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
-										}
+
 										val progress = (parent.lookup("#progress") as ProgressBar)
 										progress.progressProperty().bind(springEvolution.progressProperty())
 										val generation = EventStreams.valuesOf(springEvolution.generationProperty())
@@ -610,7 +613,7 @@ class SimulationView : View() {
 								val b = text2.toDouble()
 								val c = text3.toDouble()
 								val d = text4.toDouble()
-								deployable = SpringController ({ a * it.velocity.x + b }, { c * (1.0 - it.length / it.restLength) + d })
+								deployable = springEvolution.bestSolution.phenotype as SLIP
 							}
 							else {
 								deployable = null
@@ -628,7 +631,7 @@ class SimulationView : View() {
 					text = "Deploy"
 					setOnAction {
 						// Build the state.
-						val slip = SLIP(initial).copy(controller = deployable!!)
+						val slip = deployable!!.copy(position = initial.position, velocity = initial.velocity)
 						val s = SimulationState(slip, environment)
 
 						// Set the controller for the viewer.
@@ -641,7 +644,7 @@ class SimulationView : View() {
 					setOnAction {
 						TestTerrains.terrains.forEach {
 							// Build the state.
-							val slip = SLIP(initial).copy(controller = deployable!!)
+							val slip = deployable!!.copy(position = initial.position, velocity = initial.velocity)
 							var s = SimulationState(slip, environment.copy(terrain = it))
 							for (i in 1..2000) {
 								s = SimulationController.step(s, Coevolution.setting)
