@@ -32,14 +32,25 @@ class ProgressFragment(val generation: EventStream<Int>, val bestSolution: Objec
 				val solution = bestSolution.get()
 				val problem = bestProblem.get()
 				if (solution != null && problem != null) {
-					val controller = solution.phenotype as SpringController
-					val environment = problem.phenotype as Environment
-					val s = SimulationState(SLIP(initial).copy(controller = controller), environment)
-					Platform.runLater {
-						vbox.children.add(0, SimpleStateFragment(s, setting, 500.0, 200.0).root)
-						modalStage?.width = 500.0
-						modalStage?.height = 800.0
+					if (solution.phenotype is SpringController) {
+						val controller = solution.phenotype as SpringController
+						val environment = problem.phenotype as Environment
+						val s = SimulationState(SLIP(initial).copy(controller = controller), environment)
+						Platform.runLater {
+							vbox.children.add(0, SimpleStateFragment(s, setting, 500.0, 200.0).root)
+							modalStage?.width = 500.0
+							modalStage?.height = 800.0
+						}
+					} else if (solution.phenotype is SLIP) {
+						val environment = problem.phenotype as Environment
+						val s = SimulationState((solution.phenotype as SLIP).copy(position = initial.position, velocity = initial.velocity),environment)
+						Platform.runLater {
+							vbox.children.add(0, SimpleStateFragment(s, setting, 500.0, 200.0).root)
+							modalStage?.width = 500.0
+							modalStage?.height = 800.0
+						}
 					}
+
 				}
 			}
 			if (!(root.scene?.window?.isShowing ?: true)) {
