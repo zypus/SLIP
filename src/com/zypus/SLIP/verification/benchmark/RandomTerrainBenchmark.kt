@@ -69,7 +69,7 @@ object TerrainSerializer {
 					terrain.components.forEach { serialize(writer, it) }
 				}
 				is MidpointTerrain -> {
-					println("m ${terrain.exp} ${terrain.height} ${terrain.roughness} ${terrain.displace}")
+					println("m ${terrain.exp} ${terrain.height} ${terrain.roughness} ${terrain.displace} ${terrain.seed}")
 				}
 			}
 		}
@@ -92,7 +92,7 @@ object TerrainSerializer {
 					}.toTypedArray())
 				}
 				"m" -> {
-					MidpointTerrain(line[1].toInt(), line[2].toDouble(), line[3].toDouble(), line[4].toDouble())
+					MidpointTerrain(line[1].toInt(), line[2].toDouble(), line[3].toDouble(), line[4].toDouble(), line[5].toLong())
 				}
 				else -> null
 			}

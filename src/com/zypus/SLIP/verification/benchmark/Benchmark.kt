@@ -2,6 +2,7 @@ package com.zypus.SLIP.verification.benchmark
 
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
+import com.zypus.SLIP.models.terrain.MidpointTerrain
 import com.zypus.SLIP.models.terrain.Terrain
 import com.zypus.utilities.Vector2
 import java.io.File
@@ -18,13 +19,24 @@ object Benchmark {
 	val setting = SimulationSetting()
 
 	val terrainBase by lazy {
-		val file = File("ShortTerrainBenchmark.txt")
+//		val file = File("ShortTerrainBenchmark.txt")
+//		val terrains: MutableList<Terrain> = arrayListOf()
+//		val lines = file.reader().readLines() as MutableList<String>
+//		while (!lines.isEmpty()) {
+//			val terrain = TerrainSerializer.deserialize(lines)
+//			if (terrain != null) {
+//				terrains.add(terrain)
+//			}
+//		}
+//		terrains
 		val terrains: MutableList<Terrain> = arrayListOf()
-		val lines = file.reader().readLines() as MutableList<String>
-		while (!lines.isEmpty()) {
-			val terrain = TerrainSerializer.deserialize(lines)
-			if (terrain != null) {
-				terrains.add(terrain)
+		var s = 0L
+		for (r in arrayOf(0.7,0.8,1.0)) {
+			for (d in arrayOf(40.0,60.0,90.0)) {
+				for(e in arrayOf(4,6,8,10)) {
+					terrains += MidpointTerrain(e, d*r+2*e, r, d, s)
+					s++
+				}
 			}
 		}
 		terrains
@@ -45,21 +57,21 @@ object Benchmark {
 
 	fun benchmark(springController: SpringController): Double {
 		return evaluate(springController, terrainBase) {
-			state, off -> if (state.slip.crashed) 0.0 else state.slip.position.x - off
+			state, off -> if (state.slip.crashed) 0.0 else 1.0
 		}
 	}
 
 	fun benchmark(slip: SLIP): Double {
 		return evaluate(slip, terrainBase) {
 			state, off ->
-			if (state.slip.crashed) 0.0 else state.slip.position.x - off
+			if (state.slip.crashed) 0.0 else 1.0
 		}
 	}
 
 	fun benchmark(terrain: Terrain): Double {
 		return evaluate(terrain, controllerBase) {
 			state, off ->
-			if (state.slip.crashed) 0.0 else state.slip.position.x - off
+			if (state.slip.crashed) 0.0 else 1.0
 		}
 	}
 

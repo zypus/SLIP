@@ -48,7 +48,7 @@ data class MidpointTerrain(val exp: Int, val height: Double, val roughness: Doub
 	}
 
 	override fun toString(): String {
-		return "$exp $height $roughness $displace"
+		return "$exp $height $roughness $displace $seed"
 	}
 
 	fun generatePoints(section: Int, left: Double, right: Double, points: Array<Double>): Array<Double> {
