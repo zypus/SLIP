@@ -153,7 +153,10 @@ object TerrainNoveltyCoevolution3 {
 						el, n ->
 						synchronized(SortLock.lock) {
 							el.toList().sortedByDescending {
-								it.behaviour!!.sum()
+								e ->
+								val sum = e.behaviour!!.sum()
+								val x = el.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
+								Math.abs(x!!.behaviour!!.sum() - sum)
 							}.take(n)
 						}
 					}
