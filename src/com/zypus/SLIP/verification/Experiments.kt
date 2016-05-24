@@ -33,10 +33,16 @@ fun main(args: Array<String>) {
 
 	val times: MutableList<Long> = arrayListOf()
 
-	val algorithms = mapOf("tncm2." to TerrainNoveltyCoevolution3.rule, "sncm2." to SLIPNoveltyCoevolution3.rule, "cm2." to Coevolution3.rule, "dcm2." to DiversityCoevolution3.rule)
+	val expName = "m4"
+	val location1 = File("benchedExperiments/$expName")
+	val location2 = File("results/$expName")
+	location1.mkdir()
+	location2.mkdir()
+
+	val algorithms = mapOf("tnc" to TerrainNoveltyCoevolution3.rule, "snc." to SLIPNoveltyCoevolution3.rule, "c" to Coevolution3.rule, "dc" to DiversityCoevolution3.rule)
 	for ((filename, rule) in algorithms) {
-		val solutionWriter = File("results/${filename}solutions.txt").printWriter()
-		val problemWriter = File("results/${filename}problems.txt").printWriter()
+		val solutionWriter = File("results/$expName/solution.txt").printWriter()
+		val problemWriter = File("results/$expName/problems.txt").printWriter()
 		val evolution = GenericSpringEvolution(initial, environment, setting, rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
 			if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
 		}
@@ -53,7 +59,7 @@ fun main(args: Array<String>) {
 			println("Beginning run $r")
 
 			val time = measureTimeMillis {
-				evolution.evolve(50, 50, 1500, object : StatisticDelegate<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
+				evolution.evolve(50, 50, 2000, object : StatisticDelegate<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
 					override fun initialize(solutionCount: Int, problemCount: Int): Statistic {
 						val columns: MutableList<String> = arrayListOf("generation")
 						repeat(solutionCount + 1) {
@@ -170,7 +176,7 @@ fun main(args: Array<String>) {
 					}
 
 					override fun save(stats: Statistic) {
-						stats.writeToFile("benchedExperiments/$filename$r.csv")
+						stats.writeToFile("benchedExperiments/$expName/$filename$r.csv")
 					}
 
 				})
