@@ -1,10 +1,7 @@
 package com.zypus.SLIP.algorithms
 
-import com.zypus.SLIP.algorithms.genetic.Selection
+import com.zypus.SLIP.algorithms.genetic.*
 import com.zypus.SLIP.algorithms.genetic.builder.evolution
-import com.zypus.SLIP.algorithms.genetic.crossover
-import com.zypus.SLIP.algorithms.genetic.linearSelection
-import com.zypus.SLIP.algorithms.genetic.mutate
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
 import com.zypus.SLIP.models.terrain.MidpointTerrain
@@ -22,6 +19,19 @@ object SLIPNoveltyCoevolution3 {
 
 	val initial = Initial()
 	val setting = SimulationSetting()
+
+	fun solutionSelector(population: List<Entity<List<Double>, SLIP, Double, MutableList<Double>>>): (Entity<List<Double>, SLIP, Double, MutableList<Double>>) -> Double {
+		return { e ->
+			val sum = e.behaviour!!.sum()
+			val x = population.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
+			Math.abs(x!!.behaviour!!.sum() - sum) }
+	}
+
+	fun problemSelector(population: List<Entity<List<Double>, Environment, Double, MutableList<Double>>>): (Entity<List<Double>, Environment, Double, MutableList<Double>>) -> Double {
+		return {
+			it.behaviour!!.sum()
+		}
+	}
 
 	val rule = evolution<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
 
@@ -92,20 +102,14 @@ object SLIPNoveltyCoevolution3 {
 			}
 
 			select = { population ->
-				val rankedPopulation = population.sortedByDescending { e ->
-					val sum = e.behaviour!!.sum()
-					val x = population.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
-					Math.abs(x!!.behaviour!!.sum() - sum)
-				}
+				val rankedPopulation = population.sortedByDescending(solutionSelector(population))
 				Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5) to rankedPopulation.linearSelection(1.5)))
 			}
 
 			refine = {
 				el, n ->
 				synchronized(SortLock.lock) {
-					el.toList().sortedByDescending {
-						it.behaviour!!.sum()
-					}.take(n)
+					el.toList().sortedByDescending(solutionSelector(el)).take(n)
 				}
 			}
 
@@ -156,14 +160,12 @@ object SLIPNoveltyCoevolution3 {
 					refine = {
 						el, n ->
 						synchronized(SortLock.lock) {
-							el.toList().sortedByDescending {
-								it.behaviour!!.sum()
-							}.take(n)
+							el.toList().sortedByDescending(problemSelector(el)).take(n)
 						}
 					}
 
 					select = { population ->
-						val rankedPopulation = population.sortedByDescending { it.behaviour!!.sum() }
+						val rankedPopulation = population.sortedByDescending(problemSelector(population))
 						Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5) to rankedPopulation.linearSelection(1.5)))
 					}
 
@@ -194,12 +196,8 @@ object SLIPNoveltyCoevolution3 {
 			match = {
 				evolutionState ->
 				synchronized(SortLock.lock) {
-					val sortedSolutions = evolutionState.solutions.sortedByDescending { e ->
-						val sum = e.behaviour!!.sum()
-						val x = evolutionState.solutions.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
-						Math.abs(x!!.behaviour!!.sum() - sum)
-					}
-					val sortedProblems = evolutionState.problems.sortedByDescending { it.behaviour!!.sum() }
+					val sortedSolutions = evolutionState.solutions.sortedByDescending(solutionSelector(evolutionState.solutions))
+					val sortedProblems = evolutionState.problems.sortedByDescending(problemSelector(evolutionState.problems))
 					//					val totalSolutionFitness = sortedSolutions.sumByDouble { it.behaviour!!.sum() }
 					//					val totalProblemFitness = sortedProblems.sumByDouble { it.behaviour!!.sum() }
 					evolutionState.solutions.filter { it.behaviour!!.size == 0 }.flatMap {
