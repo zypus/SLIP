@@ -19,7 +19,7 @@ object SLIPTerrainEvolution {
 	val initial = Initial()
 	val setting = SimulationSetting()
 
-	fun rule(solutionSelector: (List<Entity<List<Double>, SLIP, Double, MutableList<Double>>>) -> (Entity<List<Double>, SLIP, Double, MutableList<Double>>) -> Double, problemSelector: (List<Entity<List<Double>, Environment, Double, MutableList<Double>>>) -> (Entity<List<Double>, Environment, Double, MutableList<Double>>) -> Double) {
+	fun rule(solutionSelector: (List<Entity<List<Double>, SLIP, Double, MutableList<Double>>>) -> (Entity<List<Double>, SLIP, Double, MutableList<Double>>) -> Double, problemSelector: (List<Entity<List<Double>, Environment, Double, MutableList<Double>>>) -> (Entity<List<Double>, Environment, Double, MutableList<Double>>) -> Double, historySize: Int = 20 , testRuns: Int = 20,noiseStrength: Double = 10.0, adaptiveReproduction: Boolean = false) {
 		evolution<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
 
 			val random = Random()
@@ -69,8 +69,6 @@ object SLIPTerrainEvolution {
 
 			/* MARK: Solution */
 
-			val historySize = 20
-
 			/* Model of the spring controller: controller controls the angle of the spring while in flight phase and controls the spring constant in stance phase. */
 			solution = {
 
@@ -80,8 +78,6 @@ object SLIPTerrainEvolution {
 					}
 				}
 
-				val noiseStrength = 10
-
 				fun Double.withNoise(): Double = this + random.nextGaussian() * noiseStrength
 
 				mapping = { gen ->
@@ -90,7 +86,12 @@ object SLIPTerrainEvolution {
 
 				select = { population ->
 					val rankedPopulation = population.sortedByDescending(solutionSelector(population))
-					Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5) to rankedPopulation.linearSelection(1.5)))
+					val fitness = rankedPopulation.first().behaviour!!.sum()
+					if (!adaptiveReproduction || random.nextDouble() < 1-fitness/(historySize*5000)) {
+						Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5) to rankedPopulation.linearSelection(1.5)))
+					} else {
+						Selection(0, arrayListOf())
+					}
 				}
 
 				refine = {
@@ -153,7 +154,13 @@ object SLIPTerrainEvolution {
 
 						select = { population ->
 							val rankedPopulation = population.sortedByDescending(problemSelector(population))
-							Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5) to rankedPopulation.linearSelection(1.5)))
+							val fitness = -rankedPopulation.first().behaviour!!.sum()
+							if (!adaptiveReproduction || random.nextDouble() < fitness / (historySize * 3000)) {
+								Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5) to rankedPopulation.linearSelection(1.5)))
+							}
+							else {
+								Selection(0, arrayListOf())
+							}
 						}
 
 						reproduce = { mother, father ->
@@ -175,8 +182,6 @@ object SLIPTerrainEvolution {
 					}
 
 			/* MARK: Evaluation */
-
-			val testRuns = 20
 
 			test = {
 
