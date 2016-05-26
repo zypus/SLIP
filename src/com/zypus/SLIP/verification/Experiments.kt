@@ -1,6 +1,9 @@
 package com.zypus.SLIP.verification
 
-import com.zypus.SLIP.algorithms.*
+import com.zypus.SLIP.algorithms.Coevolution
+import com.zypus.SLIP.algorithms.GenericSpringEvolution
+import com.zypus.SLIP.algorithms.SLIPTerrainEvolution
+import com.zypus.SLIP.algorithms.genetic.Entity
 import com.zypus.SLIP.algorithms.genetic.EvolutionState
 import com.zypus.SLIP.controllers.StatisticDelegate
 import com.zypus.SLIP.models.Environment
@@ -22,6 +25,18 @@ import kotlin.system.measureTimeMillis
  * @created 09/05/16
  */
 
+fun fitnessSelector(population: List<Entity<List<Double>, *, Double, MutableList<Double>>>): (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double  {
+	return {it.behaviour!!.sum()}
+}
+
+fun fitnessDiversitySelector(population: List<Entity<List<Double>, *, Double, MutableList<Double>>>): (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double {
+	return {e ->
+		val sum = e.behaviour!!.sum()
+		val x = population.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
+		Math.abs(x!!.behaviour!!.sum() - sum)}
+}
+
+
 fun main(args: Array<String>) {
 	val initial = Coevolution.initial
 	val setting = Coevolution.setting
@@ -33,13 +48,14 @@ fun main(args: Array<String>) {
 
 	val times: MutableList<Long> = arrayListOf()
 
-	val expName = "m4"
-	val location1 = File("benchedExperiments/$expName")
-	val location2 = File("results/$expName")
-	location1.mkdir()
-	location2.mkdir()
+	val expName = "m5"
+	File("benchedExperiments/$expName").mkdir()
+	File("results/$expName").mkdir()
 
-	val algorithms = mapOf("tnc" to TerrainNoveltyCoevolution3.rule, "snc." to SLIPNoveltyCoevolution3.rule, "c" to Coevolution3.rule, "dc" to DiversityCoevolution3.rule)
+	val fs = ::fitnessSelector
+	val fds = ::fitnessDiversitySelector
+
+	val algorithms = mapOf("tnc" to SLIPTerrainEvolution.rule(fs,fds), "snc." to SLIPTerrainEvolution.rule(fds,fs), "c" to SLIPTerrainEvolution.rule(fs,fs), "dc" to SLIPTerrainEvolution.rule(fds,fds))
 	for ((filename, rule) in algorithms) {
 		val solutionWriter = File("results/$expName/solution.txt").printWriter()
 		val problemWriter = File("results/$expName/problems.txt").printWriter()
@@ -59,7 +75,7 @@ fun main(args: Array<String>) {
 			println("Beginning run $r")
 
 			val time = measureTimeMillis {
-				evolution.evolve(50, 50, 2000, object : StatisticDelegate<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
+				evolution.evolve(50, 50, 1500, object : StatisticDelegate<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
 					override fun initialize(solutionCount: Int, problemCount: Int): Statistic {
 						val columns: MutableList<String> = arrayListOf("generation")
 						repeat(solutionCount + 1) {

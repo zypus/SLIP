@@ -19,7 +19,7 @@ object SLIPTerrainEvolution {
 	val initial = Initial()
 	val setting = SimulationSetting()
 
-	fun rule(solutionSelector: (List<Entity<List<Double>, SLIP, Double, MutableList<Double>>>) -> (Entity<List<Double>, SLIP, Double, MutableList<Double>>) -> Double, problemSelector: (List<Entity<List<Double>, Environment, Double, MutableList<Double>>>) -> (Entity<List<Double>, Environment, Double, MutableList<Double>>) -> Double) {
+	fun rule(solutionSelector: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double, problemSelector: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double) =
 		evolution<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
 
 			val random = Random()
@@ -229,7 +229,6 @@ object SLIPTerrainEvolution {
 
 			}
 
-		}
 	}
 
 }
