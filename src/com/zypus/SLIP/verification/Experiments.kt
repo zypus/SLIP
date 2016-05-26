@@ -1,6 +1,9 @@
 package com.zypus.SLIP.verification
 
-import com.zypus.SLIP.algorithms.*
+import com.zypus.SLIP.algorithms.Coevolution
+import com.zypus.SLIP.algorithms.GenericSpringEvolution
+import com.zypus.SLIP.algorithms.SLIPTerrainEvolution
+import com.zypus.SLIP.algorithms.genetic.Entity
 import com.zypus.SLIP.algorithms.genetic.EvolutionState
 import com.zypus.SLIP.controllers.StatisticDelegate
 import com.zypus.SLIP.models.Environment
@@ -22,6 +25,18 @@ import kotlin.system.measureTimeMillis
  * @created 09/05/16
  */
 
+fun fitnessSelector(population: List<Entity<List<Double>, *, Double, MutableList<Double>>>): (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double  {
+	return {it.behaviour!!.sum()}
+}
+
+fun fitnessDiversitySelector(population: List<Entity<List<Double>, *, Double, MutableList<Double>>>): (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double {
+	return {e ->
+		val sum = e.behaviour!!.sum()
+		val x = population.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
+		Math.abs(x!!.behaviour!!.sum() - sum)}
+}
+
+
 fun main(args: Array<String>) {
 	val initial = Coevolution.initial
 	val setting = Coevolution.setting
@@ -33,10 +48,17 @@ fun main(args: Array<String>) {
 
 	val times: MutableList<Long> = arrayListOf()
 
-	val algorithms = mapOf("tncm2." to TerrainNoveltyCoevolution3.rule, "sncm2." to SLIPNoveltyCoevolution3.rule, "cm2." to Coevolution3.rule, "dcm2." to DiversityCoevolution3.rule)
+	val expName = "m5"
+	File("benchedExperiments/$expName").mkdir()
+	File("results/$expName").mkdir()
+
+	val fs = ::fitnessSelector
+	val fds = ::fitnessDiversitySelector
+
+	val algorithms = mapOf("tnc" to SLIPTerrainEvolution.rule(fs,fds), "snc." to SLIPTerrainEvolution.rule(fds,fs), "c" to SLIPTerrainEvolution.rule(fs,fs), "dc" to SLIPTerrainEvolution.rule(fds,fds))
 	for ((filename, rule) in algorithms) {
-		val solutionWriter = File("results/${filename}solutions.txt").printWriter()
-		val problemWriter = File("results/${filename}problems.txt").printWriter()
+		val solutionWriter = File("results/$expName/solution.txt").printWriter()
+		val problemWriter = File("results/$expName/problems.txt").printWriter()
 		val evolution = GenericSpringEvolution(initial, environment, setting, rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
 			if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
 		}
@@ -170,7 +192,7 @@ fun main(args: Array<String>) {
 					}
 
 					override fun save(stats: Statistic) {
-						stats.writeToFile("benchedExperiments/$filename$r.csv")
+						stats.writeToFile("benchedExperiments/$expName/$filename$r.csv")
 					}
 
 				})
