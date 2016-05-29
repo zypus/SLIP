@@ -44,26 +44,28 @@ fun main(args: Array<String>) {
 
 	var totalTime = 0L;
 	var passedRuns = 0;
-	val runs = 20;
+	val runs = 10;
+	val noiseStrength = 0.0
+	val cycles = 4000
 
 	val times: MutableList<Long> = arrayListOf()
 
-	val expName = "m5"
+	val expName = "nonoise4000"
 	File("benchedExperiments/$expName").mkdir()
 	File("results/$expName").mkdir()
 
 	val fs = ::fitnessSelector
 	val fds = ::fitnessDiversitySelector
 
-	val algorithms = mapOf("tnc" to SLIPTerrainEvolution.rule(fs,fds), "snc." to SLIPTerrainEvolution.rule(fds,fs), "c" to SLIPTerrainEvolution.rule(fs,fs), "dc" to SLIPTerrainEvolution.rule(fds,fds))
+	val algorithms = mapOf("terrain.diversity" to SLIPTerrainEvolution.rule(fs,fds, noiseStrength = noiseStrength), "slip.diversity" to SLIPTerrainEvolution.rule(fds,fs, noiseStrength = noiseStrength), "both.fitness" to SLIPTerrainEvolution.rule(fs,fs, adaptiveReproduction = true, noiseStrength = noiseStrength), "both.diversity" to SLIPTerrainEvolution.rule(fds,fds, noiseStrength = noiseStrength))
 	for ((filename, rule) in algorithms) {
-		val solutionWriter = File("results/$expName/solution.txt").printWriter()
-		val problemWriter = File("results/$expName/problems.txt").printWriter()
+		val solutionWriter = File("results/$expName/$filename.solution.txt").printWriter()
+		val problemWriter = File("results/$expName/$filename.problems.txt").printWriter()
 		val evolution = GenericSpringEvolution(initial, environment, setting, rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
 			if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
 		}
 		EventStreams.valuesOf(evolution.progressProperty()).feedTo {
-			println("%03.1f%%".format(it * 100))
+			if (it % 0.1  == 0.0) println("%03.1f%%".format(it * 100))
 			if (it == 1.0) {
 				evolution.solutionsProperty().get().forEach { ControllerSerializer.serialize(solutionWriter, it.genotype as List<Double>) }
 				evolution.problemsProperty().get().forEach { TerrainSerializer.serialize(problemWriter, (it.phenotype as Environment).terrain) }
@@ -75,9 +77,9 @@ fun main(args: Array<String>) {
 			println("Beginning run $r")
 
 			val time = measureTimeMillis {
-				evolution.evolve(50, 50, 1500, object : StatisticDelegate<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
+				evolution.evolve(50, 50, cycles, object : StatisticDelegate<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
 					override fun initialize(solutionCount: Int, problemCount: Int): Statistic {
-						val columns: MutableList<String> = arrayListOf("generation")
+						val columns: MutableList<String> = arrayListOf("cycle")
 						repeat(solutionCount + 1) {
 							columns.add("s$it fitness")
 							columns.add("s$it a")
@@ -97,12 +99,13 @@ fun main(args: Array<String>) {
 							columns.add("p$it spikiness")
 							columns.add("p$it ascension")
 							columns.add("p$it benchmark")
+							columns.add("p$it difficulty")
 						}
 						return Statistic(*columns.toTypedArray())
 					}
 
 					override fun update(row: Statistic.Row, generation: Int, state: EvolutionState<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>>) {
-						row["generation"] = generation
+						row["cycle"] = generation
 						state.solutions.forEachIndexed { i, entity ->
 							row["s$i fitness"] = entity.behaviour!!.sum()
 							row["s$i a"] = entity.genotype[0]
@@ -119,6 +122,7 @@ fun main(args: Array<String>) {
 							row["p$i power"] = terrain.power
 							row["p$i roughness"] = terrain.roughness
 							row["p$i displace"] = terrain.displace
+							row["p$i difficulty"] = terrain.displace*terrain.roughness*terrain.exp+terrain.height
 							row["p$i spikiness"] = TerrainDifficulty.spikiness(entity.phenotype.terrain)
 							row["p$i ascension"] = TerrainDifficulty.ascension(entity.phenotype.terrain)
 						}

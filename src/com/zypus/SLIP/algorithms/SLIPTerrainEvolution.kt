@@ -19,7 +19,7 @@ object SLIPTerrainEvolution {
 	val initial = Initial()
 	val setting = SimulationSetting()
 
-	fun rule(solutionSelector: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double, problemSelector: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double, historySize: Int = 20 , testRuns: Int = 20,noiseStrength: Double = 10.0, adaptiveReproduction: Boolean = false) =
+	fun rule(solutionSelector: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double, problemSelector: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double, historySize: Int = 20 , testRuns: Int = 20,noiseStrength: Double = 0.0, adaptiveReproduction: Boolean = false) =
 		evolution<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
 
 			val random = Random()
@@ -78,10 +78,10 @@ object SLIPTerrainEvolution {
 					}
 				}
 
-				fun Double.withNoise(): Double = this + random.nextGaussian() * noiseStrength
+				fun Double.withNoise(ns: Double): Double = this + random.nextGaussian() * ns
 
 				mapping = { gen ->
-					SLIP(restLength = gen[4], mass = gen[5], radius = 10 * gen[5], controller = SpringController ({ slip -> gen[0] * slip.velocity.x.withNoise() + gen[1] }, { slip -> gen[2] * (1.0 - (slip.length.withNoise() / slip.restLength)) + gen[3] }))
+					SLIP(restLength = gen[4], mass = gen[5], radius = 10 * gen[5], controller = SpringController ({ slip -> (gen[0] * slip.velocity.x.withNoise(noiseStrength) + gen[1]).withNoise(noiseStrength/100) }, { slip -> (gen[2] * (1.0 - (slip.length.withNoise(noiseStrength) / slip.restLength)) + gen[3]).withNoise(noiseStrength/100) }))
 				}
 
 				select = { population ->
@@ -188,33 +188,27 @@ object SLIPTerrainEvolution {
 				match = {
 					evolutionState ->
 					synchronized(SortLock.lock) {
-						val sortedSolutions = evolutionState.solutions.sortedByDescending(solutionSelector(evolutionState.solutions))
-						val sortedProblems = evolutionState.problems.sortedByDescending(problemSelector(evolutionState.problems))
-						//					val totalSolutionFitness = sortedSolutions.sumByDouble { it.behaviour!!.sum() }
-						//					val totalProblemFitness = sortedProblems.sumByDouble { it.behaviour!!.sum() }
+						val sortedSolutions = evolutionState.solutions.filter{ it.behaviour!!.size != 0 }.sortedByDescending(solutionSelector(evolutionState.solutions))
+						val sortedProblems = evolutionState.problems.filter{ it.behaviour!!.size != 0 }.sortedByDescending(problemSelector(evolutionState.problems))
 						evolutionState.solutions.filter { it.behaviour!!.size == 0 }.flatMap {
 							s ->
-							(1..historySize).map { s to sortedProblems.linearSelection(1.5) }
-							//						sortedProblems.take(historySize).map { s to it }
+							if (sortedProblems.isEmpty()) {
+								(1..historySize).map { s to evolutionState.problems.linearSelection(1.5) }
+							} else {
+								(1..historySize).map { s to sortedProblems.linearSelection(1.5) }
+							}
 						} + evolutionState.problems.filter { it.behaviour!!.size == 0 }.flatMap {
 							p ->
-							(1..historySize).map { sortedSolutions.linearSelection(1.5) to p }
-							//						sortedSolutions.take(historySize).map { it to p }
+							if (sortedSolutions.isEmpty()) {
+								(1..historySize).map { evolutionState.solutions.linearSelection(1.5) to p}
+							} else {
+								(1..historySize).map { sortedSolutions.linearSelection(1.5) to p }
+							}
 						} + (1..testRuns).map {
-							sortedSolutions.linearSelection(1.5) to sortedProblems.linearSelection(1.5)
-							//						var current = 1.0
-							//						val nextSolution = random.nextDouble()
-							//						val s = sortedSolutions.find {
-							//							current -= it.behaviour!!.sum() / totalSolutionFitness
-							//							nextSolution > current
-							//						} ?: sortedSolutions.first()
-							//						current = 1.0
-							//						val nextProblem = random.nextDouble()
-							//						val p = sortedProblems.find {
-							//							current -= it.behaviour!!.sum() / totalProblemFitness
-							//							nextProblem > current
-							//						} ?: sortedProblems.first()
-							//						s to p
+							if (sortedSolutions.isEmpty()) {
+								evolutionState.solutions.linearSelection(1.5) to evolutionState.problems.linearSelection(1.5)
+							} else {
+								sortedSolutions.linearSelection(1.5) to sortedProblems.linearSelection(1.5)							}
 						}
 					}
 				}
