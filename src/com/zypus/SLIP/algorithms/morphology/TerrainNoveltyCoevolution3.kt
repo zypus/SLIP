@@ -101,7 +101,7 @@ object TerrainNoveltyCoevolution3 {
 
 			select = { population ->
 				val rankedPopulation = population.sortedByDescending(solutionSelector(population))
-				Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5) to rankedPopulation.linearSelection(1.5)))
+				Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5,random) to rankedPopulation.linearSelection(1.5,random)))
 			}
 
 			refine = {
@@ -164,7 +164,7 @@ object TerrainNoveltyCoevolution3 {
 
 					select = { population ->
 						val rankedPopulation = population.sortedByDescending(problemSelector(population))
-						Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5) to rankedPopulation.linearSelection(1.5)))
+						Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5,random) to rankedPopulation.linearSelection(1.5,random)))
 					}
 
 					reproduce = { mother, father ->
@@ -200,14 +200,14 @@ object TerrainNoveltyCoevolution3 {
 					//					val totalProblemFitness = sortedProblems.sumByDouble { it.behaviour!!.sum() }
 					evolutionState.solutions.filter { it.behaviour!!.size == 0 }.flatMap {
 						s ->
-						(1..historySize).map { s to sortedProblems.linearSelection(1.5) }
+						(1..historySize).map { s to sortedProblems.linearSelection(1.5,random) }
 						//						sortedProblems.take(historySize).map { s to it }
 					} + evolutionState.problems.filter { it.behaviour!!.size == 0 }.flatMap {
 						p ->
-						(1..historySize).map { sortedSolutions.linearSelection(1.5) to p }
+						(1..historySize).map { sortedSolutions.linearSelection(1.5,random) to p }
 						//						sortedSolutions.take(historySize).map { it to p }
 					} + (1..testRuns).map {
-						sortedSolutions.linearSelection(1.5) to sortedProblems.linearSelection(1.5)
+						sortedSolutions.linearSelection(1.5,random) to sortedProblems.linearSelection(1.5,random)
 						//						var current = 1.0
 						//						val nextSolution = random.nextDouble()
 						//						val s = sortedSolutions.find {

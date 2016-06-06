@@ -56,71 +56,92 @@ object Benchmark {
 	}
 
 	fun benchmark(springController: SpringController): Double {
-		return evaluate(springController, terrainBase) {
-			state, off -> if (state.slip.crashed) 0.0 else 1.0
-		}
+		return evaluate(springController, terrainBase, 0.0, average =  {
+			value, i -> value/i
+		}, sum = {
+			f,s -> f+s
+		}, eval = {
+			state, off ->
+			if (state.slip.crashed) 0.0 else 1.0
+		})
 	}
 
 	fun benchmark(slip: SLIP): Double {
-		return evaluate(slip, terrainBase) {
+		return evaluate(slip, terrainBase, 0.0, average =  {
+			value, i -> value/i
+		}, sum = {
+			f,s -> f+s
+		}, eval = {
 			state, off ->
 			if (state.slip.crashed) 0.0 else 1.0
-		}
+		})
 	}
 
 	fun benchmark(terrain: Terrain): Double {
-		return evaluate(terrain, controllerBase) {
+		return evaluate(terrain, controllerBase, 0.0, average =  {
+			value, i -> value/i
+		}, sum = {
+			f,s -> f+s
+		}, eval = {
 			state, off ->
 			if (state.slip.crashed) 0.0 else 1.0
-		}
+		})
 	}
 
-	fun evaluate(springController: SpringController, terrains: List<Terrain>, eval: (SimulationState,Double)->Double): Double {
-		return terrains.sumByDouble {
-			val environment = Environment(terrain = it)
-			(-10..10 step 10).sumByDouble {
-				val initial = Initial(Vector2(it, 200))
-				val slip = SLIP(initial).copy(controller = springController)
+	fun <T> evaluate(springController: SpringController, terrains: List<Terrain>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Double)->T): T {
+		return terrains.fold(initial) {
+			value, terrain ->
+			val environment = Environment(terrain = terrain)
+			val next = average((-10..10 step 10).fold(initial) {
+				s, offset ->
+				val start = Initial(Vector2(offset, 200))
+				val slip = SLIP(start).copy(controller = springController)
 				var state = SimulationState(slip, environment)
 				for (i in 1..1000) {
 					state = SimulationController.step(state, setting)
 					if (state.slip.crashed) break
 				}
-				eval(state,it.toDouble())
-			} / 3.0
+				sum (eval(state,offset.toDouble()), s)
+			}, 3)
+			sum(value,next)
 		}
 	}
 
-	fun evaluate(slip: SLIP, terrains: List<Terrain>, eval: (SimulationState, Double) -> Double): Double {
-		return terrains.sumByDouble {
-			val environment = Environment(terrain = it)
-			(-10..10 step 10).sumByDouble {
-				val initial = Initial(Vector2(it, 200))
-				val s = slip.copy(position = initial.position, velocity = initial.velocity)
-				var state = SimulationState(s, environment)
+	fun <T> evaluate(slip: SLIP, terrains: List<Terrain>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Double)->T): T  {
+		return terrains.fold(initial) {
+			value, terrain ->
+			val environment = Environment(terrain = terrain)
+			val next = average((-10..10 step 10).fold(initial) {
+				s, offset ->
+				val start = Initial(Vector2(offset, 200))
+				val sl = slip.copy(position = start.position, velocity = start.velocity)
+				var state = SimulationState(sl, environment)
 				for (i in 1..1000) {
 					state = SimulationController.step(state, setting)
 					if (state.slip.crashed) break
 				}
-				eval(state, it.toDouble())
-			} / 3.0
+				sum (eval(state,offset.toDouble()), s)
+			}, 3)
+			sum(value,next)
 		}
 	}
 
-	fun evaluate(terrain: Terrain, controllers: List<SpringController>, eval: (SimulationState, Double) -> Double): Double {
+	fun <T> evaluate(terrain: Terrain, controllers: List<SpringController>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Double)->T): T {
 		val environment = Environment(terrain = terrain)
-		return controllers.sumByDouble {
-			c ->
-			(-10..10 step 10).sumByDouble {
-				val initial = Initial(Vector2(it, 200))
-				val slip = SLIP(initial).copy(controller = c)
+		return controllers.fold(initial) {
+			value, controller ->
+			val next = average((-10..10 step 10).fold(initial) {
+				s, offset ->
+				val start = Initial(Vector2(offset, 200))
+				val slip = SLIP(start).copy(controller = controller)
 				var state = SimulationState(slip, environment)
 				for (i in 1..1000) {
 					state = SimulationController.step(state, setting)
 					if (state.slip.crashed) break
 				}
-				eval(state, it.toDouble())
-			} / 3.0
+				sum (eval(state,offset.toDouble()), s)
+			}, 3)
+			sum(value,next)
 		}
 	}
 

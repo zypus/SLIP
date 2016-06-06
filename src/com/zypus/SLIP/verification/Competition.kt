@@ -1,12 +1,9 @@
 package com.zypus.SLIP.verification
 
 import com.zypus.SLIP.models.SpringController
-import com.zypus.SLIP.models.Statistic
 import com.zypus.SLIP.models.terrain.Terrain
-import com.zypus.SLIP.verification.benchmark.Benchmark
 import com.zypus.SLIP.verification.benchmark.ControllerSerializer
 import com.zypus.SLIP.verification.benchmark.TerrainSerializer
-import com.zypus.utilities.mapParallel
 import java.io.File
 
 /**
@@ -46,53 +43,53 @@ fun main(args: Array<String>) {
 		terrains.take(n)
 	}
 
-	val solutionResults = solutions.map { s ->
-		val map = problems.map { p ->
-			s.mapParallel {
-				Benchmark.evaluate(it, p) {
-					state, off ->
-					state.slip.position.x - off
-				} / p.size
-			}
-		}
-		println("Done")
-		map
-	}
-	val problemResults = problems.map { p ->
-		val map = solutions.map { s ->
-			p.mapParallel {
-				Benchmark.evaluate(it, s) {
-					state, off ->
-					state.slip.position.x - off
-				} / s.size
-			}
-		}
-		println("Done")
-		map
-	}
+//	val solutionResults = solutions.map { s ->
+//		val map = problems.map { p ->
+//			s.mapParallel {
+//				Benchmark.evaluate(it, p) {
+//					state, off ->
+//					state.slip.position.x - off
+//				} / p.size
+//			}
+//		}
+//		println("Done")
+//		map
+//	}
+//	val problemResults = problems.map { p ->
+//		val map = solutions.map { s ->
+//			p.mapParallel {
+//				Benchmark.evaluate(it, s) {
+//					state, off ->
+//					state.slip.position.x - off
+//				} / s.size
+//			}
+//		}
+//		println("Done")
+//		map
+//	}
 
-	val columns = algorithms.flatMap { s -> algorithms.map { "${s}VS$it" } }
-	run {
-		val statistic = Statistic(*columns.toTypedArray())
-		(0..n - 1).map {
-			with(statistic.newRow()) {
-				columns.mapIndexed { i, s ->
-					this[s] = solutionResults[i / 4][i % 4][it]
-				}
-			}
-		}
-		statistic.writeToFile("results/solutions.average.csv")
-	}
-	run {
-		val statistic = Statistic(*columns.toTypedArray())
-		(0..n - 1).map {
-			with(statistic.newRow()) {
-				columns.mapIndexed { i, s ->
-					this[s] = problemResults[i / 4][i % 4][it]
-				}
-			}
-		}
-		statistic.writeToFile("results/problems.average.csv")
-	}
+//	val columns = algorithms.flatMap { s -> algorithms.map { "${s}VS$it" } }
+//	run {
+//		val statistic = Statistic(*columns.toTypedArray())
+//		(0..n - 1).map {
+//			with(statistic.newRow()) {
+//				columns.mapIndexed { i, s ->
+//					this[s] = solutionResults[i / 4][i % 4][it]
+//				}
+//			}
+//		}
+//		statistic.writeToFile("results/solutions.average.csv")
+//	}
+//	run {
+//		val statistic = Statistic(*columns.toTypedArray())
+//		(0..n - 1).map {
+//			with(statistic.newRow()) {
+//				columns.mapIndexed { i, s ->
+//					this[s] = problemResults[i / 4][i % 4][it]
+//				}
+//			}
+//		}
+//		statistic.writeToFile("results/problems.average.csv")
+//	}
 
 }

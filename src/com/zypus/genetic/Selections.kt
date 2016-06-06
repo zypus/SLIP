@@ -1,5 +1,7 @@
 package com.zypus.SLIP.algorithms.genetic
 
+import java.util.*
+
 
 /**
  * TODO Add description
@@ -35,12 +37,12 @@ object Selections {
 		return selected
 	}
 
-	fun linear(populationSize: Int, bias: Double): Int {
-		return (populationSize * (bias - Math.sqrt(bias * bias - 4.0 * (bias - 1) * Math.random())) / 2.0 / (bias - 1)).toInt()
+	fun linear(populationSize: Int, bias: Double, random: Random): Int {
+		return (populationSize * (bias - Math.sqrt(bias * bias - 4.0 * (bias - 1) * random.nextDouble())) / 2.0 / (bias - 1)).toInt()
 	}
 
 }
 
-fun <T> Collection<T>.linearSelection(bias: Double): T {
-	return elementAt(Selections.linear(size, bias))
+fun <T> Collection<T>.linearSelection(bias: Double, random: Random): T {
+	return elementAt(Selections.linear(size, bias,random))
 }
