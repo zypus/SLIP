@@ -22,7 +22,7 @@ class SimulationController {
 
 		fun step(state: SimulationState, setting: SimulationSetting): SimulationState {
 			var (dt, eps) = setting
-			var (pos, v, a, L, l, k, M, R, sPos, c, crashed) = state.slip
+			var (pos, v, a, L, l, k, M, R, sPos, c, crashed, grounded) = state.slip
 
 			/* If the slip is crashed return immediately without further calculation.*/
 			if (crashed) {
@@ -36,6 +36,7 @@ class SimulationController {
 			val ty = terrain(pos.x - sin(a) * (L + R))
 
 			if (pos.y <= h + ty) {
+				grounded = true
 				/* System is in the stance phase. */
 
 				/* Check the controller for the new spring value. */
@@ -102,6 +103,7 @@ class SimulationController {
 			}
 			/* Else the system is in the flight phase. */
 			else {
+				grounded = false
 				/* Get the controller input and update angle but only if the spring remains above the ground. */
 				if (v.y < 0) {
 					val control = min(max(-PI,c.angle(state.slip)),PI)
@@ -163,7 +165,7 @@ class SimulationController {
 				v = Vector2(0, 0)
 			}
 
-			return state.copy(slip = state.slip.copy(position = pos, velocity = v, angle = a, length = l, springConstant = k, standPosition = sPos, crashed = crashed))
+			return state.copy(slip = state.slip.copy(position = pos, velocity = v, angle = a, length = l, springConstant = k, standPosition = sPos, crashed = crashed, grounded = grounded))
 		}
 
 	}

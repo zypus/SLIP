@@ -15,6 +15,12 @@ object TerrainDifficulty {
 		return (0..999).sumByDouble { x -> terrain(x.toDouble()) }/1000.0
 	}
 
+	fun difficulty(terrain: Terrain): Double {
+		val min = terrain((0..999).minBy { terrain(it.toDouble()) }!!.toDouble())
+		val sum = (0..999).sumByDouble { terrain(it.toDouble()) }
+		return (sum - 1000.0*min)/1000
+	}
+
 	fun spikiness(terrain: Terrain): Double {
 		var lastY = terrain(-1.0)
 		var ascending = true
@@ -29,9 +35,10 @@ object TerrainDifficulty {
 					ascending = true
 				}
 				max = y
-			} else if (y < lastY) {
+			}
+			else if (y < lastY) {
 				if (ascending) {
-					spikiness += max-min
+					spikiness += max - min
 					ascending = false
 				}
 				min = y

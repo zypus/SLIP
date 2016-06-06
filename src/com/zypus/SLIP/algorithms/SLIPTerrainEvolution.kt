@@ -223,8 +223,11 @@ object SLIPTerrainEvolution {
 					slip, environment ->
 					val ix = random.nextDouble() * 40.0 - 20.0
 					var state = SimulationState(slip.copy(position = initial.position, velocity = initial.velocity), environment.copy(terrain = (environment.terrain as MidpointTerrain).copy()))
-					for (i in 1..2000) {
-						state = SimulationController.step(state, Coevolution3.setting)
+					var jumps = 0
+					while (jumps < 50) {
+						val before = state.slip.grounded
+						state = SimulationController.step(state, setting)
+						if (before == true && state.slip.grounded == false) jumps++
 						if (state.slip.crashed) break
 					}
 					val x = state.slip.position.x - ix

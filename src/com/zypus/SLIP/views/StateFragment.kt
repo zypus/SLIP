@@ -144,12 +144,18 @@ class StateFragment(var state: SimulationState, setting: SimulationSetting) : Fr
 			}
 			add.fire()
 		}
+
+		var steps = 0
+
 		var subscription: Subscription? = null
 		subscription = EventStreams.animationFrames().filter { play }
 				.feedTo {
-					if (!root.scene.window.isShowing) subscription?.unsubscribe()
-					s = SimulationController.step(s, setting)
-					gc.drawSimulationState(s)
+					if (steps < 1000 ) {
+						if (!root.scene.window.isShowing) subscription?.unsubscribe()
+						s = SimulationController.step(s, setting)
+						gc.drawSimulationState(s)
+					}
+					steps++
 				}
 	}
 

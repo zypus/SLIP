@@ -1,10 +1,12 @@
 package com.zypus.SLIP.verification
 
+import com.zypus.SLIP.models.terrain.MidpointTerrain
 import com.zypus.SLIP.models.terrain.Terrain
 import com.zypus.SLIP.verification.benchmark.TerrainSerializer
 import com.zypus.SLIP.views.drawMarkers
 import com.zypus.SLIP.views.drawTerrain
 import javafx.application.Application
+import javafx.collections.ObservableList
 import javafx.scene.canvas.Canvas
 import javafx.scene.layout.VBox
 import javafx.stage.FileChooser
@@ -30,11 +32,11 @@ class MultiTerrainView : View() {
 			gridpane {
 				hgap = 10.0
 				vgap = 10.0
-				addRow(0,*canvi.subList(0,10).toTypedArray())
-				addRow(1,*canvi.subList(10,20).toTypedArray())
-				addRow(2,*canvi.subList(20,30).toTypedArray())
-				addRow(3,*canvi.subList(30,40).toTypedArray())
-				addRow(4,*canvi.subList(40,50).toTypedArray())
+				addRow(0, *canvi.subList(0, 10).toTypedArray())
+				addRow(1, *canvi.subList(10, 20).toTypedArray())
+				addRow(2, *canvi.subList(20, 30).toTypedArray())
+				addRow(3, *canvi.subList(30, 40).toTypedArray())
+				addRow(4, *canvi.subList(40, 50).toTypedArray())
 			}
 
 			val terrains = arrayListOf<Terrain>().observable()
@@ -58,69 +60,53 @@ class MultiTerrainView : View() {
 								}
 							}
 							start = 0
-							terrains.drop(start).take(50).forEachIndexed { i, terrain ->
-								val canvas = canvi[i]
-								with(canvas.graphicsContext2D) {
-									clearRect(0.0, 0.0, canvas.width, canvas.height)
-									translate(canvas.width / 2, canvas.height / 2)
-									scale(0.5, 0.5)
-									drawTerrain(-canvas.width, canvas.width, 10000, terrain)
-									scale(2.0, 2.0)
-									translate(-canvas.width / 2, -canvas.height / 2)
-									translate(0.0, canvas.height / 2)
-									scale(0.5, 0.5)
-									drawMarkers(-canvas.width, canvas.width, canvas.width, 50, 10, 6.0, 3.0)
-									scale(2.0, 2.0)
-									translate(0.0, -canvas.height / 2)
-								}
-							}
+							showTerrainPage(start, terrains)
 						}
 					}
 				}
 				button("Previous") {
 					setOnAction {
 						start = Math.max(start - 50, 0)
-						terrains.drop(start).take(50).forEachIndexed { i, terrain ->
-							val canvas = canvi[i]
-							with(canvas.graphicsContext2D) {
-								clearRect(0.0, 0.0, canvas.width, canvas.height)
-								translate(canvas.width / 2, canvas.height / 2)
-								scale(0.5, 0.5)
-								drawTerrain(-canvas.width, canvas.width, 10000, terrain)
-								scale(2.0, 2.0)
-								translate(-canvas.width / 2, -canvas.height / 2)
-								translate(0.0, canvas.height / 2)
-								scale(0.5, 0.5)
-								drawMarkers(-canvas.width, canvas.width, canvas.width, 50, 10, 6.0, 3.0)
-								scale(2.0, 2.0)
-								translate(0.0, -canvas.height / 2)
-							}
-						}
+						showTerrainPage(start, terrains)
 					}
 				}
 				button("Next") {
 					setOnAction {
 						start = Math.min(start + 50, terrains.size - 50)
-						terrains.drop(start).take(50).forEachIndexed { i, terrain ->
-							val canvas = canvi[i]
-							with(canvas.graphicsContext2D) {
-								clearRect(0.0, 0.0, canvas.width, canvas.height)
-								translate(canvas.width / 2, canvas.height / 2)
-								scale(0.5, 0.5)
-								drawTerrain(-canvas.width, canvas.width, 10000, terrain)
-								scale(2.0, 2.0)
-								translate(-canvas.width / 2, -canvas.height / 2)
-								translate(0.0, canvas.height / 2)
-								scale(0.5, 0.5)
-								drawMarkers(-canvas.width, canvas.width, canvas.width, 50, 10, 6.0, 3.0)
-								scale(2.0, 2.0)
-								translate(0.0, -canvas.height / 2)
-							}
-						}
+						showTerrainPage(start, terrains)
 					}
 				}
 			}
 		}
+	}
+
+	private fun showTerrainPage(start: Int, terrains: ObservableList<Terrain>) {
+		val difficulty = fun (terrain: MidpointTerrain):Double = TerrainDifficulty.difficulty(terrain)
+		terrains.drop(start)
+				.take(50)
+				.sortedBy {
+					if (it is MidpointTerrain) difficulty(it) else 0.0
+				}
+				.forEachIndexed {
+					i, terrain ->
+					val canvas = canvi[i]
+					with(canvas.graphicsContext2D) {
+						clearRect(0.0, 0.0, canvas.width, canvas.height)
+						translate(canvas.width / 2, canvas.height / 2)
+						scale(0.25, 0.25)
+						drawTerrain(-2*canvas.width, 2*canvas.width, 10000, terrain)
+						scale(4.0, 4.0)
+						translate(-canvas.width / 2, -canvas.height / 2)
+						translate(0.0, canvas.height / 2)
+						scale(0.25, 0.25)
+						drawMarkers(-2*canvas.width, 2*canvas.width, 2*canvas.width, 50, 10, 6.0, 3.0)
+						scale(4.0, 4.0)
+						translate(0.0, -canvas.height / 2)
+						if (terrain is MidpointTerrain) {
+							fillText("${"%.2f".format(difficulty(terrain))}", canvas.width/2-10, 20.0)
+						}
+					}
+				}
 	}
 
 }
