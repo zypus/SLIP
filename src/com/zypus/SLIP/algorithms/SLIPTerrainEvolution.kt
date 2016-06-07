@@ -5,6 +5,7 @@ import com.zypus.SLIP.algorithms.genetic.builder.evolution
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
 import com.zypus.SLIP.models.terrain.MidpointTerrain
+import com.zypus.utilities.pickRandom
 import java.util.*
 
 /**
@@ -26,6 +27,7 @@ object SLIPTerrainEvolution {
 			val slipRandom = Random(seed+16127)
 			val terrainRandom = Random(seed+66089)
 			val utilityRandom = Random(seed+92857)
+			val replaceRandom = Random(seed+101)
 
 			val solutionBounds = arrayListOf(
 					-0.5 to 0.5,
@@ -91,9 +93,9 @@ object SLIPTerrainEvolution {
 					val rankedPopulation = population.sortedByDescending(solutionSelector(population))
 					val fitness = rankedPopulation.first().behaviour!!.sum()
 					if (!adaptiveReproduction || utilityRandom.nextDouble() < 1-fitness/(historySize*5000)) {
-						Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5, slipRandom) to rankedPopulation.linearSelection(1.5, slipRandom)))
+						Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5, slipRandom) to rankedPopulation.linearSelection(1.5, slipRandom)),toBeReplaced = arrayListOf(rankedPopulation.pickRandom { replaceRandom.nextDouble() }))
 					} else {
-						Selection(0, arrayListOf())
+						Selection(0, arrayListOf(),toBeReplaced = arrayListOf(rankedPopulation.pickRandom { replaceRandom.nextDouble() }))
 					}
 				}
 
@@ -159,10 +161,10 @@ object SLIPTerrainEvolution {
 							val rankedPopulation = population.sortedByDescending(problemSelector(population))
 							val fitness = -rankedPopulation.first().behaviour!!.sum()
 							if (!adaptiveReproduction || utilityRandom.nextDouble() < fitness / (historySize * 3000)) {
-								Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5,terrainRandom) to rankedPopulation.linearSelection(1.5,terrainRandom)))
+								Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5,terrainRandom) to rankedPopulation.linearSelection(1.5,terrainRandom)),toBeReplaced = arrayListOf(rankedPopulation.pickRandom { replaceRandom.nextDouble() }))
 							}
 							else {
-								Selection(0, arrayListOf())
+								Selection(0, arrayListOf(),toBeReplaced = arrayListOf(rankedPopulation.pickRandom { replaceRandom.nextDouble() }))
 							}
 						}
 
@@ -220,12 +222,14 @@ object SLIPTerrainEvolution {
 					slip, environment ->
 					val ix = mainRandom.nextDouble() * 40.0 - 20.0
 					var state = SimulationState(slip.copy(position = initial.position, velocity = initial.velocity), environment.copy(terrain = (environment.terrain as MidpointTerrain).copy()))
-					var jumps = 0
-					while (jumps < 50) {
-						val before = state.slip.grounded
+					//var jumps = 0
+					var cycle = 0
+					while (cycle < 2000) {
+						//val before = state.slip.grounded
 						state = SimulationController.step(state, setting)
-						if (before == true && state.slip.grounded == false) jumps++
+					//	if (before == true && state.slip.grounded == false) jumps++
 						if (state.slip.crashed) break
+						cycle++
 					}
 					val x = state.slip.position.x - ix
 					/* Positive feedback for the solution, negative feedback for the problem. */
