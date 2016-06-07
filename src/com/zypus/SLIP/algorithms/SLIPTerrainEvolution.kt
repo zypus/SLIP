@@ -20,7 +20,7 @@ object SLIPTerrainEvolution {
 	val initial = Initial()
 	val setting = SimulationSetting()
 
-	fun rule(solutionSelector: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double, problemSelector: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double, historySize: Int = 20 , testRuns: Int = 20,noiseStrength: Double = 0.0, adaptiveReproduction: Boolean = false, seed: Long = 0) =
+	fun rule(solutionSelector: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double, problemSelector: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double, historySize: Int = 20 , testRuns: Int = 20,noiseStrength: Double = 0.0, adaptiveReproduction: Boolean = false, seed: Long = 0, replaceCount: Int = 0) =
 		evolution<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
 
 			val mainRandom = Random(seed)
@@ -93,9 +93,9 @@ object SLIPTerrainEvolution {
 					val rankedPopulation = population.sortedByDescending(solutionSelector(population))
 					val fitness = rankedPopulation.first().behaviour!!.sum()
 					if (!adaptiveReproduction || utilityRandom.nextDouble() < 1-fitness/(historySize*5000)) {
-						Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5, slipRandom) to rankedPopulation.linearSelection(1.5, slipRandom)),toBeReplaced = arrayListOf(rankedPopulation.pickRandom { replaceRandom.nextDouble() }))
+						Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5, slipRandom) to rankedPopulation.linearSelection(1.5, slipRandom)),toBeReplaced = (1..replaceCount).map {rankedPopulation.pickRandom { replaceRandom.nextDouble() }})
 					} else {
-						Selection(0, arrayListOf(),toBeReplaced = arrayListOf(rankedPopulation.pickRandom { replaceRandom.nextDouble() }))
+						Selection(0, arrayListOf(),toBeReplaced = (1..replaceCount).map {rankedPopulation.pickRandom { replaceRandom.nextDouble() }})
 					}
 				}
 
@@ -161,10 +161,10 @@ object SLIPTerrainEvolution {
 							val rankedPopulation = population.sortedByDescending(problemSelector(population))
 							val fitness = -rankedPopulation.first().behaviour!!.sum()
 							if (!adaptiveReproduction || utilityRandom.nextDouble() < fitness / (historySize * 3000)) {
-								Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5,terrainRandom) to rankedPopulation.linearSelection(1.5,terrainRandom)),toBeReplaced = arrayListOf(rankedPopulation.pickRandom { replaceRandom.nextDouble() }))
+								Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5,terrainRandom) to rankedPopulation.linearSelection(1.5,terrainRandom)),toBeReplaced = (1..replaceCount).map {rankedPopulation.pickRandom { replaceRandom.nextDouble() }})
 							}
 							else {
-								Selection(0, arrayListOf(),toBeReplaced = arrayListOf(rankedPopulation.pickRandom { replaceRandom.nextDouble() }))
+								Selection(0, arrayListOf(),toBeReplaced = (1..replaceCount).map {rankedPopulation.pickRandom { replaceRandom.nextDouble() }})
 							}
 						}
 
