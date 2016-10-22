@@ -10,7 +10,7 @@ package com.zypus.utilities
 
 fun rungeKutta(x: List<Double>, f: List<(List<Double>) -> Double>, h: Double): List<Double> {
 	val add: List<Double>.(List<Double>) -> List<Double> = { this.zip(it) { x, y -> x + y } }
-	val times: Double.(List<Double>) -> List<Double> = { it.map { it * this } }
+	operator fun Double.times(list: List<Double>): List<Double> = list.map { it * this }
 
 	val a = f.map { it(x) }
 	val b = f.map { it(x.add(0.5 * h * a)) }

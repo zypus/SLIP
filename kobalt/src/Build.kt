@@ -24,6 +24,7 @@ val p = project {
         compile("org.reactfx:reactfx:2.0-M5")
         compile("org.controlsfx:controlsfx:8.40.10")
         compile("com.fasterxml.jackson.module:jackson-module-kotlin:2.7.1-2")
+        compile("net.mikera:vectorz:0.64.0")
     }
 
     dependenciesTest {

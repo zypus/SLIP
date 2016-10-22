@@ -306,7 +306,7 @@ class SimulationView : View() {
 
 				tab("Coevolution", DecorationPane()) {
 					val support = ValidationSupport()
-					val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, Coevolution3.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
+					val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, Coevolution.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
 						if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
 					}
 					vbox {
@@ -412,7 +412,7 @@ class SimulationView : View() {
 
 				tab("SLIP Novelty Coevolution", DecorationPane()) {
 					val support = ValidationSupport()
-					val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, SLIPNoveltyCoevolution3.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
+					val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, SLIPNoveltyCoevolution.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
 						if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
 					}
 					vbox {
@@ -518,7 +518,7 @@ class SimulationView : View() {
 
 				tab("Terrain Novelty Coevolution", DecorationPane()) {
 					val support = ValidationSupport()
-					val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, TerrainNoveltyCoevolution3.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
+					val springEvolution = GenericSpringEvolution(Coevolution.initial, environment, Coevolution.setting, TerrainNoveltyCoevolution.rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
 						if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
 					}
 					vbox {

@@ -19,6 +19,12 @@ data class Vector2(val x: Double, val y: Double) {
     operator fun div(other: Number): Vector2 = Vector2(x / other.toDouble(), y / other.toDouble())
     infix fun dot(other: Vector2): Double = x * other.x + y * other.y
 
+    fun rotate(angle: Angle) =
+            Vector2(
+                    x * Math.cos(angle.rad) - y * Math.sin(angle.rad),
+                    x * Math.sin(angle.rad) + y * Math.cos(angle.rad)
+            )
+
     val norm2 = x*x+y*y
 
     val norm = Math.sqrt(norm2)
