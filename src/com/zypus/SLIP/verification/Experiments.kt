@@ -63,12 +63,15 @@ fun main(args: Array<String>) {
 
     val experiments = arrayListOf("terrain.diversity", "slip.diversity", "both.fitness", "both.fitness.adaptive", "both.diversity").flatMap {
         primes.subList(0, runs).map { p ->
+            val settings = SLIPTerrainEvolution.SLIPTerrainEvolutionSetting(noiseStrength = noiseStrength, seed = p)
             it to when (it) {
-                "terrain.diversity" -> SLIPTerrainEvolution.rule(fs, fds, noiseStrength = noiseStrength, seed = p)
-                "slip.diversity" -> SLIPTerrainEvolution.rule(fds, fs, noiseStrength = noiseStrength, seed = p)
-                "both.fitness" -> SLIPTerrainEvolution.rule(fs, fs, adaptiveReproduction = false, noiseStrength = noiseStrength, seed = p)
-                "both.fitness.adaptive" -> SLIPTerrainEvolution.rule(fs, fs, adaptiveReproduction = true, noiseStrength = noiseStrength, seed = p)
-                "both.diversity" -> SLIPTerrainEvolution.rule(fds, fds, noiseStrength = noiseStrength, seed = p)
+                "terrain.diversity" -> {
+                    SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fs, fds), settings)
+                }
+                "slip.diversity" -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fds, fs), settings)
+                "both.fitness" -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fs, fs), settings)
+                "both.fitness.adaptive" -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fs, fs), settings.copy(adaptiveReproduction = true))
+                "both.diversity" -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fds, fds), settings)
                 else -> throw IllegalAccessError()
             }
         }

@@ -16,16 +16,33 @@ import java.util.*
  */
 object SLIPTerrainEvolution {
 
+	data class Selectors(
+			val solutionSelection: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double,
+			val problemSelection: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double,
+			val solutionRemoval: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double = solutionSelection,
+			val solutionMatching: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double = solutionSelection,
+			val problemRemoval: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double = problemSelection,
+			val problemMatching: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double = problemSelection
+	)
+
+	data class SLIPTerrainEvolutionSetting(val historySize: Int = 20,
+										   val testRuns: Int = 20,
+										   val noiseStrength: Double = 0.0,
+										   val adaptiveReproduction: Boolean = false,
+										   val seed: Long = 0L)
+
 	val initial = Initial()
 	val setting = SimulationSetting()
 
-	fun rule(solutionSelector: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double, problemSelector: (List<Entity<List<Double>, *, Double, MutableList<Double>>>) -> (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double, historySize: Int = 20 , testRuns: Int = 20,noiseStrength: Double = 0.0, adaptiveReproduction: Boolean = false, seed: Long = 0) =
+	fun rule(
+			selectors: Selectors,
+			settings: SLIPTerrainEvolutionSetting) =
 		evolution<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>> {
 
-			val mainRandom = Random(seed)
-			val slipRandom = Random(seed+16127)
-			val terrainRandom = Random(seed+66089)
-			val utilityRandom = Random(seed+92857)
+			val mainRandom = Random(settings.seed)
+			val slipRandom = Random(settings.seed+16127)
+			val terrainRandom = Random(settings.seed+66089)
+			val utilityRandom = Random(settings.seed+92857)
 
 			val solutionBounds = arrayListOf(
 					-0.5 to 0.5,
@@ -84,13 +101,13 @@ object SLIPTerrainEvolution {
 				fun Double.withNoise(ns: Double): Double = this + slipRandom.nextGaussian() * ns
 
 				mapping = { gen ->
-					SLIP(restLength = gen[4], mass = gen[5], radius = 10 * gen[5], controller = SpringController ({ slip -> (gen[0] * slip.velocity.x.withNoise(noiseStrength) + gen[1]).withNoise(noiseStrength/100) }, { slip -> (gen[2] * (1.0 - (slip.length.withNoise(noiseStrength) / slip.restLength)) + gen[3]).withNoise(noiseStrength/100) }))
+					SLIP(restLength = gen[4], mass = gen[5], radius = 10 * gen[5], controller = SpringController ({ slip -> (gen[0] * slip.velocity.x.withNoise(settings.noiseStrength) + gen[1]).withNoise(settings.noiseStrength/100) }, { slip -> (gen[2] * (1.0 - (slip.length.withNoise(settings.noiseStrength) / slip.restLength)) + gen[3]).withNoise(settings.noiseStrength/100) }))
 				}
 
 				select = { population ->
-					val rankedPopulation = population.sortedByDescending(solutionSelector(population))
+					val rankedPopulation = population.sortedByDescending(selectors.solutionSelection(population))
 					val fitness = rankedPopulation.first().behaviour!!.sum()
-					if (!adaptiveReproduction || utilityRandom.nextDouble() < 1-fitness/(historySize*5000)) {
+					if (!settings.adaptiveReproduction || utilityRandom.nextDouble() < 1-fitness/(settings.historySize*5000)) {
 						Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5, slipRandom) to rankedPopulation.linearSelection(1.5, slipRandom)))
 					} else {
 						Selection(0, arrayListOf())
@@ -100,7 +117,7 @@ object SLIPTerrainEvolution {
 				refine = {
 					el, n ->
 					synchronized(SortLock.lock) {
-						el.toList().sortedByDescending(solutionSelector(el)).take(n)
+						el.toList().sortedByDescending(selectors.solutionRemoval(el)).take(n)
 					}
 				}
 
@@ -115,7 +132,7 @@ object SLIPTerrainEvolution {
 					store = {
 						e, o, b ->
 						e.add(b)
-						e.takeLast(historySize) as MutableList<Double>
+						e.takeLast(settings.historySize) as MutableList<Double>
 					}
 
 				}
@@ -151,14 +168,14 @@ object SLIPTerrainEvolution {
 						refine = {
 							el, n ->
 							synchronized(SortLock.lock) {
-								el.toList().sortedByDescending(problemSelector(el)).take(n)
+								el.toList().sortedByDescending(selectors.problemRemoval(el)).take(n)
 							}
 						}
 
 						select = { population ->
-							val rankedPopulation = population.sortedByDescending(problemSelector(population))
+							val rankedPopulation = population.sortedByDescending(selectors.problemSelection(population))
 							val fitness = -rankedPopulation.first().behaviour!!.sum()
-							if (!adaptiveReproduction || utilityRandom.nextDouble() < fitness / (historySize * 3000)) {
+							if (!settings.adaptiveReproduction || utilityRandom.nextDouble() < fitness / (settings.historySize * 3000)) {
 								Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5,terrainRandom) to rankedPopulation.linearSelection(1.5,terrainRandom)))
 							}
 							else {
@@ -177,7 +194,7 @@ object SLIPTerrainEvolution {
 							store = {
 								e, o, b ->
 								e.add(b)
-								e.takeLast(historySize) as MutableList<Double>
+								e.takeLast(settings.historySize) as MutableList<Double>
 							}
 
 						}
@@ -191,23 +208,23 @@ object SLIPTerrainEvolution {
 				match = {
 					evolutionState ->
 					synchronized(SortLock.lock) {
-						val sortedSolutions = evolutionState.solutions.filter{ it.behaviour!!.size != 0 }.sortedByDescending(solutionSelector(evolutionState.solutions))
-						val sortedProblems = evolutionState.problems.filter{ it.behaviour!!.size != 0 }.sortedByDescending(problemSelector(evolutionState.problems))
+						val sortedSolutions = evolutionState.solutions.filter{ it.behaviour!!.size != 0 }.sortedByDescending(selectors.solutionMatching(evolutionState.solutions))
+						val sortedProblems = evolutionState.problems.filter{ it.behaviour!!.size != 0 }.sortedByDescending(selectors.problemMatching(evolutionState.problems))
 						evolutionState.solutions.filter { it.behaviour!!.size == 0 }.flatMap {
 							s ->
 							if (sortedProblems.isEmpty()) {
-								(1..historySize).map { s to evolutionState.problems.linearSelection(1.5,mainRandom) }
+								(1..settings.historySize).map { s to evolutionState.problems.linearSelection(1.5,mainRandom) }
 							} else {
-								(1..historySize).map { s to sortedProblems.linearSelection(1.5,mainRandom) }
+								(1..settings.historySize).map { s to sortedProblems.linearSelection(1.5,mainRandom) }
 							}
 						} + evolutionState.problems.filter { it.behaviour!!.size == 0 }.flatMap {
 							p ->
 							if (sortedSolutions.isEmpty()) {
-								(1..historySize).map { evolutionState.solutions.linearSelection(1.5,mainRandom) to p}
+								(1..settings.historySize).map { evolutionState.solutions.linearSelection(1.5,mainRandom) to p}
 							} else {
-								(1..historySize).map { sortedSolutions.linearSelection(1.5,mainRandom) to p }
+								(1..settings.historySize).map { sortedSolutions.linearSelection(1.5,mainRandom) to p }
 							}
-						} + (1..testRuns).map {
+						} + (1..settings.testRuns).map {
 							if (sortedSolutions.isEmpty()) {
 								evolutionState.solutions.linearSelection(1.5,mainRandom) to evolutionState.problems.linearSelection(1.5,mainRandom)
 							} else {
