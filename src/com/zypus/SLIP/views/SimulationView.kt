@@ -242,7 +242,7 @@ class SimulationView : View() {
 									}
 								}
 							}
-							progressBar {
+							progressbar {
 								id = "progress"
 								visibleProperty().bind(evolve.textProperty().isEqualTo("Stop"))
 							}
@@ -350,7 +350,7 @@ class SimulationView : View() {
 									}
 								}
 							}
-							progressBar {
+							progressbar {
 								id = "progress"
 								visibleProperty().bind(evolve.textProperty().isEqualTo("Stop"))
 							}
@@ -456,7 +456,7 @@ class SimulationView : View() {
 									}
 								}
 							}
-							progressBar {
+							progressbar {
 								id = "progress"
 								visibleProperty().bind(evolve.textProperty().isEqualTo("Stop"))
 							}
@@ -562,7 +562,7 @@ class SimulationView : View() {
 									}
 								}
 							}
-							progressBar {
+							progressbar {
 								id = "progress"
 								visibleProperty().bind(evolve.textProperty().isEqualTo("Stop"))
 							}

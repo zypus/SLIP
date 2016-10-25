@@ -54,12 +54,12 @@ import java.io.Writer
 //	val file = File("ApprovedControllerBenchmark.txt")
 //	val lines = file.reader().readLines() as MutableList<String>
 //
-//	val controllers: MutableList<SpringController> = arrayListOf()
+//	val simulation: MutableList<SpringController> = arrayListOf()
 //	val lines2 = file.reader().readLines() as MutableList<String>
 //	while (!lines2.isEmpty()) {
 //		val controller = ControllerSerializer.deserialize(lines2)
 //		if (controller != null) {
-//			controllers.add(controller)
+//			simulation.add(controller)
 //		}
 //	}
 //
@@ -67,7 +67,7 @@ import java.io.Writer
 //
 //	var c = 0
 //
-//	val filtered = lines.zip(controllers).filter {
+//	val filtered = lines.zip(simulation).filter {
 //		println(c++)
 //		Benchmark.benchmark(it.second) != 0.0
 //	}.map { it.first }

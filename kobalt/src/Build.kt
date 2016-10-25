@@ -20,7 +20,7 @@ val p = project {
     }
 
     dependencies {
-        compile("no.tornado:tornadofx:1.4.1")
+        compile("no.tornado:tornadofx:1.5.7")
         compile("org.reactfx:reactfx:2.0-M5")
         compile("org.controlsfx:controlsfx:8.40.10")
         compile("com.fasterxml.jackson.module:jackson-module-kotlin:2.7.1-2")
