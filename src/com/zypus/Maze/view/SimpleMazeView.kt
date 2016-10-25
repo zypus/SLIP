@@ -31,7 +31,8 @@ class SimpleMazeView : View() {
 				LineSegment(Vector2(0, 0), Vector2(0, 500)),
 				LineSegment(Vector2(0, 500), Vector2(500, 500)),
 				LineSegment(Vector2(0, 0), Vector2(500, 0)),
-				LineSegment(Vector2(500, 0), Vector2(500, 500))
+				LineSegment(Vector2(500, 0), Vector2(500, 500)),
+				LineSegment(Vector2(100, 400), Vector2(400, 100))
 		)
 
 		val start = Vector2(100, 100)
@@ -48,10 +49,15 @@ class SimpleMazeView : View() {
 		})
 
 		evolver.progressProperty().onChange {
-			if (it != null) print("\r%3.1f%%".format(100*it))
+			if (it != null) {
+				val behaviour = (evolver.bestProblem.behaviour!! as List<Double>)
+				val score = behaviour.sum() / behaviour.size
+				print("\r%3.1f%% %.1f".format(100*it, score))
+			}
 		}
 
-		val winner = evolver.evolve(25, 1, 1000)
+
+		val winner = evolver.evolve(50, 1, 2000)
 
 		val state = MazeNavigationState(robot, maze, winner.phenotype)
 

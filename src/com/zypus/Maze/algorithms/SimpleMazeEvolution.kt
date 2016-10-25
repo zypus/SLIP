@@ -137,7 +137,8 @@ object SimpleMazeEvolution {
 						LineSegment(Vector2(0, 0), Vector2(0, 500)),
 						LineSegment(Vector2(0, 500), Vector2(500, 500)),
 						LineSegment(Vector2(0, 0), Vector2(500, 0)),
-						LineSegment(Vector2(500, 0), Vector2(500, 500))
+						LineSegment(Vector2(500, 0), Vector2(500, 500)),
+						LineSegment(Vector2(100, 400), Vector2(400, 100))
 				)
 
 				val start = Vector2(100, 100)
