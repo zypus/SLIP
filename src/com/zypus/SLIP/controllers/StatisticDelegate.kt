@@ -14,7 +14,7 @@ interface StatisticDelegate<SG : Any, SP : Any, SB : Any, SBC : Any, PG : Any, P
 
 	fun initialize(solutionCount: Int, problemCount: Int): Statistic
 
-	fun update(row: Statistic.Row, generation: Int, state: EvolutionState<SG, SP, SB, SBC, PG, PP, PB, PBC>)
+	fun update(stats: Statistic, generation: Int, state: EvolutionState<SG, SP, SB, SBC, PG, PP, PB, PBC>)
 
 	fun save(stats: Statistic)
 

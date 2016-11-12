@@ -51,7 +51,7 @@ class GenericMazeEvolution<SG : Any, SP : Any, SB : Any, SBC : Any, PG : Any, PP
 			evolutionRule.matchAndEvaluate(state)
 
 			if (stats != null) {
-				statsDelegate?.update(stats.newRow(), g, state)
+				statsDelegate?.update(stats, g, state)
 			}
 
 			solutions = state.solutions
@@ -73,7 +73,7 @@ class GenericMazeEvolution<SG : Any, SP : Any, SB : Any, SBC : Any, PG : Any, PP
 		evolutionRule.matchAndEvaluate(state)
 
 		if (stats != null) {
-			statsDelegate?.update(stats.newRow(), maxGenerations, state)
+			statsDelegate?.update(stats, maxGenerations, state)
 			statsDelegate?.save(stats)
 		}
 

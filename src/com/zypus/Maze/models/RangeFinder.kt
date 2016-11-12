@@ -1,8 +1,9 @@
 package com.zypus.Maze.models
 
 import com.zypus.utilities.LineSegment
-import com.zypus.utilities.Vector2
+import com.zypus.utilities.distanceTo
 import com.zypus.utilities.intersect
+import mikera.vectorz.Vector2
 
 /**
  * TODO Add description
@@ -16,7 +17,9 @@ object RangeFinder {
 	fun findRange(robot: Robot, maze: Maze, dir: Vector2): Double {
 		val pos = robot.pos
 		val walls = maze.walls
-		val line = LineSegment(from = pos, to = pos+dir*10000)
+		val target = pos.clone()
+		target.addMultiple(dir, 10000.0)
+		val line = LineSegment(from = pos.clone(), to = target)
 		val closestWall = walls.minBy {
 			wall ->
 			(wall intersect line)?.distanceTo(pos) ?: Double.MAX_VALUE

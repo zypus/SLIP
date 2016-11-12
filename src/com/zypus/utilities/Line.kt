@@ -1,5 +1,6 @@
 package com.zypus.utilities
 
+import mikera.vectorz.Vector2
 import java.lang.Math.max
 import java.lang.Math.min
 
@@ -31,7 +32,7 @@ infix fun Line.intersect(other: Line): Vector2? {
 
 data class LineSegment(val from: Vector2, val to: Vector2)
 
-val epsilon = 1E-8
+val epsilon = 1E-4
 
 infix fun LineSegment.intersect(other: LineSegment): Vector2? {
 	val intersection = Line(from, to) intersect Line(other.from, other.to)

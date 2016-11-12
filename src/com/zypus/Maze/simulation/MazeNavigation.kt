@@ -3,10 +3,8 @@ package com.zypus.Maze.simulation
 import com.zypus.Maze.models.MazeNavigationState
 import com.zypus.Maze.models.Robot
 import com.zypus.SLIP.models.SimulationSetting
-import com.zypus.utilities.Angle
-import com.zypus.utilities.Circle
-import com.zypus.utilities.Vector2
-import com.zypus.utilities.intersect
+import com.zypus.utilities.*
+import mikera.vectorz.Vector2
 
 /**
  * TODO Add description
@@ -24,12 +22,14 @@ object MazeNavigation {
 
 		val (leftRight, upDown) = control.control(robot, maze)
 
-		val dir = Vector2(0, 1).rotate(robot.rot)
+		val dir = Vector2(0.0, 1.0)
+		dir.rotate(robot.rot)
 
+		val (x,y) = robot.pos
 		// linear
-		var pos = robot.pos + dir * upDown.limit(-8.0,8.0) * delta
+		robot.pos.addMultiple(dir, upDown.limit(-8.0, 8.0) * delta)
 
-		if (pos.x.isInfinite()) {
+		if (robot.pos.x.isInfinite()) {
 			println("Ups")
 		}
 
@@ -38,16 +38,17 @@ object MazeNavigation {
 
 //		val moveDir = pos - robot.pos
 
-		val circle = Circle(pos, robot.radius)
+		val circle = Circle(robot.pos, robot.radius)
 
 		maze.walls.forEach {
 			wall ->
 			if (circle intersect wall) {
-				pos = robot.pos
+				robot.pos.x = x
+				robot.pos.y = y
 			}
 		}
 
-		val robotStar = Robot(pos, rot, robot.radius)
+		val robotStar = Robot(robot.pos, rot, robot.radius)
 
 		return MazeNavigationState(robotStar, maze, control)
 

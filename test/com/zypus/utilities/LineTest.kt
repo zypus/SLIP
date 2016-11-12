@@ -14,14 +14,14 @@ class LineTest {
 
 	@Test
 	fun test1() {
-		val a = LineSegment(Vector2(-1,0), Vector2(1,0))
-		val b = LineSegment(Vector2(0, -1), Vector2(0, 1))
+		val a = LineSegment(mikera.vectorz.Vector2(-1.0, 0.0), mikera.vectorz.Vector2(1.0, 0.0))
+		val b = LineSegment(mikera.vectorz.Vector2(0.0, -1.0), mikera.vectorz.Vector2(0.0, 1.0))
 
-		val inter1 = a intersect  b
-		val inter2 = b intersect  a
+		val inter1 = a intersect b
+		val inter2 = b intersect a
 
-		Assert.assertEquals(Vector2(0, 0), inter1)
-		Assert.assertEquals(Vector2(-0.0, -0.0), inter2)
+		Assert.assertEquals(mikera.vectorz.Vector2(0.0, 0.0), inter1)
+		Assert.assertEquals(mikera.vectorz.Vector2(-0.0, -0.0), inter2)
 	}
 
 	@Test
@@ -41,13 +41,16 @@ class LineTest {
 
 
 		for (r in 0..180) {
-			val da = Vector2(0, 1).rotate(r.deg)
-			val db = Vector2(1, 0).rotate(r.deg)
-			val dc = Vector2(1, 1).rotate(r.deg)
+			val da = mikera.vectorz.Vector2(0.0, 1.0)
+			da.rotate(r.deg)
+			val db = mikera.vectorz.Vector2(1.0, 0.0)
+			db.rotate(r.deg)
+			val dc = mikera.vectorz.Vector2(1.0, 1.0)
+			dc.rotate(r.deg)
 
-			val a = LineSegment(Vector2(0,0)-da, Vector2(0,0)+da)
-			val b = LineSegment(Vector2(0,0)-db, Vector2(0,0)+db)
-			val c = LineSegment(Vector2(0,0)-dc, Vector2(0,0)+dc)
+			val a = LineSegment(mikera.vectorz.Vector2(0.0, 0.0).subCopy(da) as mikera.vectorz.Vector2, da)
+			val b = LineSegment(mikera.vectorz.Vector2(0.0, 0.0).subCopy(db) as mikera.vectorz.Vector2, db)
+			val c = LineSegment(mikera.vectorz.Vector2(0.0, 0.0).subCopy(dc) as mikera.vectorz.Vector2, dc)
 
 			val inter1 = (a intersect b)!!
 			val inter2 = (b intersect a)!!
@@ -61,8 +64,8 @@ class LineTest {
 
 	@Test
 	fun test_startpoint_intersection() {
-		val a = LineSegment(Vector2(0, 0), Vector2(1, 0))
-		val b = LineSegment(Vector2(0, 0), Vector2(0, 1))
+		val a = LineSegment(mikera.vectorz.Vector2(0.0, 0.0), mikera.vectorz.Vector2(1.0, 0.0))
+		val b = LineSegment(mikera.vectorz.Vector2(0.0, 0.0), mikera.vectorz.Vector2(0.0, 1.0))
 
 		val inter1 = (a intersect b)!!
 		val inter2 = (b intersect a)!!
@@ -73,8 +76,8 @@ class LineTest {
 
 	@Test
 	fun test_endpoint_intersection() {
-		val a = LineSegment(Vector2(1, 0), Vector2(0, 0))
-		val b = LineSegment(Vector2(0, 1), Vector2(0, 0))
+		val a = LineSegment(mikera.vectorz.Vector2(1.0, 0.0), mikera.vectorz.Vector2(0.0, 0.0))
+		val b = LineSegment(mikera.vectorz.Vector2(0.0, 1.0), mikera.vectorz.Vector2(0.0, 0.0))
 
 		val inter1 = (a intersect b)!!
 		val inter2 = (b intersect a)!!
@@ -85,17 +88,20 @@ class LineTest {
 
 	@Test
 	fun test_box() {
-		val a = LineSegment(Vector2(0, 0), Vector2(0, 500))
-		val b = LineSegment(Vector2(0, 500), Vector2(500, 500))
-		val c = LineSegment(Vector2(0, 0), Vector2(500, 0))
-		val d = LineSegment(Vector2(500, 0), Vector2(500, 500))
+		val a = LineSegment(mikera.vectorz.Vector2(0.0, 0.0), mikera.vectorz.Vector2(0.0, 500.0))
+		val b = LineSegment(mikera.vectorz.Vector2(0.0, 500.0), mikera.vectorz.Vector2(500.0, 500.0))
+		val c = LineSegment(mikera.vectorz.Vector2(0.0, 0.0), mikera.vectorz.Vector2(500.0, 0.0))
+		val d = LineSegment(mikera.vectorz.Vector2(500.0, 0.0), mikera.vectorz.Vector2(500.0, 500.0))
 
 		for (r in 0..3600) {
 
-			val pos = Vector2(250,250)
-			val dir = Vector2(0,1).rotate((r/10.0).deg)*10000
+			val pos = mikera.vectorz.Vector2(250.0, 250.0)
+			val dir = mikera.vectorz.Vector2(0.0, 1.0)
+			dir.rotate((r / 10.0).deg)
+			dir.multiply(10000.0)
+			dir.add(pos)
 
-			val x = LineSegment(pos, pos+dir)
+			val x = LineSegment(pos, dir)
 
 			val inter1 = x intersect a
 			val inter2 = x intersect b
@@ -104,7 +110,7 @@ class LineTest {
 
 			val inters = arrayListOf(inter1, inter2, inter3, inter4)
 
-			Assert.assertNotNull("Null at ${r/10.0}", inters.firstOrNull { it != null })
+			Assert.assertNotNull("Null at ${r / 10.0}", inters.firstOrNull { it != null })
 		}
 	}
 

@@ -6,7 +6,6 @@ import com.zypus.Maze.models.MazeNavigationState
 import com.zypus.Maze.models.Robot
 import com.zypus.SLIP.models.SimulationSetting
 import com.zypus.utilities.LineSegment
-import com.zypus.utilities.Vector2
 import com.zypus.utilities.deg
 import javafx.geometry.Insets
 import tornadofx.View
@@ -27,15 +26,15 @@ class TestMazeView : View() {
 		padding = Insets(5.0)
 
 		val walls = arrayListOf(
-				LineSegment(Vector2(0, 0), Vector2(0, 500)),
-				LineSegment(Vector2(0, 500), Vector2(500, 500)),
-				LineSegment(Vector2(0, 0), Vector2(500, 0)),
-				LineSegment(Vector2(500, 0), Vector2(500, 500)),
-				LineSegment(Vector2(100, 400), Vector2(400, 100))
+				LineSegment(mikera.vectorz.Vector2(0.0, 0.0), mikera.vectorz.Vector2(0.0, 500.0)),
+				LineSegment(mikera.vectorz.Vector2(0.0, 500.0), mikera.vectorz.Vector2(500.0, 500.0)),
+				LineSegment(mikera.vectorz.Vector2(0.0, 0.0), mikera.vectorz.Vector2(500.0, 0.0)),
+				LineSegment(mikera.vectorz.Vector2(500.0, 0.0), mikera.vectorz.Vector2(500.0, 500.0)),
+				LineSegment(mikera.vectorz.Vector2(100.0, 400.0), mikera.vectorz.Vector2(400.0, 100.0))
 		)
 
-		val start = Vector2(100, 100)
-		val goal = Vector2(400, 400)
+		val start = mikera.vectorz.Vector2(100.0, 100.0)
+		val goal = mikera.vectorz.Vector2(400.0, 400.0)
 
 		val maze = Maze(walls, start, goal)
 
@@ -43,6 +42,7 @@ class TestMazeView : View() {
 
 		val control = FunctionalRobotController(
 				leftFunctions = arrayListOf(
+						{ x -> random() },
 						{ x -> random() },
 						{ x -> random() },
 						{ x -> random() },
@@ -72,7 +72,7 @@ class TestMazeView : View() {
 
 		val setting = SimulationSetting()
 
-		val frag = MazeFragment(state, setting)
+		val frag = MazeFragment(this, state, setting)
 
 		this += frag
 

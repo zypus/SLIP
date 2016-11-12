@@ -1,7 +1,7 @@
 package com.zypus.Maze.algorithms
 
 import com.zypus.Maze.controller.ARobotController
-import com.zypus.Maze.controller.FunctionalRobotController
+import com.zypus.Maze.controller.LinearRobotController
 import com.zypus.Maze.models.Maze
 import com.zypus.Maze.models.MazeNavigationState
 import com.zypus.Maze.models.Robot
@@ -14,8 +14,9 @@ import com.zypus.SLIP.algorithms.genetic.linearSelection
 import com.zypus.SLIP.algorithms.genetic.mutate
 import com.zypus.SLIP.models.SimulationSetting
 import com.zypus.utilities.LineSegment
-import com.zypus.utilities.Vector2
 import com.zypus.utilities.deg
+import com.zypus.utilities.distanceTo
+import mikera.vectorz.Vector2
 import java.util.*
 
 /**
@@ -80,7 +81,7 @@ object SimpleMazeEvolution {
 		solution = {
 
 			initialize = {
-				(1..18).mapIndexed { i, v ->
+				(1..22).mapIndexed { i, v ->
 					// Either use the bound that is provided for the index, or use first bound (assumed to be the bound for all indices)
 					resolveBound(solutionBounds.getOrElse(i) { solutionBounds[0] })
 				}
@@ -88,13 +89,13 @@ object SimpleMazeEvolution {
 
 			mapping = {
 				gen ->
-				val leftFunctions = gen.slice(0..8).map { v -> { x: Double -> v*x} }
-				val rightFunctions = gen.slice(9..17).map { v -> { x: Double -> v*x} }
-				FunctionalRobotController(leftFunctions, rightFunctions)
+				val leftWeights = gen.slice(0..10)
+				val rightWeights = gen.slice(11..21)
+				LinearRobotController(leftWeights, rightWeights)
 			}
 
 			select = { population ->
-				val rankedPopulation = population.sortedBy { e ->
+				val rankedPopulation = population.sortedByDescending { e ->
 					val sum = e.behaviour!!.sum()
 					val x = population.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
 					Math.abs(x!!.behaviour!!.sum() - sum)
@@ -105,8 +106,10 @@ object SimpleMazeEvolution {
 			refine = {
 				el, n ->
 				synchronized(SortLock.lock) {
-					el.toList().sortedBy {
-						it.behaviour!!.sum()
+					el.toList().sortedByDescending { e->
+						val sum = e.behaviour!!.sum()
+						val x = el.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
+						Math.abs(x!!.behaviour!!.sum() - sum)
 					}.take(n)
 				}
 			}
@@ -134,15 +137,15 @@ object SimpleMazeEvolution {
 		problem = {
 			initialize = {
 				val walls = arrayListOf(
-						LineSegment(Vector2(0, 0), Vector2(0, 500)),
-						LineSegment(Vector2(0, 500), Vector2(500, 500)),
-						LineSegment(Vector2(0, 0), Vector2(500, 0)),
-						LineSegment(Vector2(500, 0), Vector2(500, 500)),
-						LineSegment(Vector2(100, 400), Vector2(400, 100))
+						LineSegment(Vector2(0.0, 0.0), Vector2(0.0, 500.0)),
+						LineSegment(Vector2(0.0, 500.0), Vector2(500.0, 500.0)),
+						LineSegment(Vector2(0.0, 0.0), Vector2(500.0, 0.0)),
+						LineSegment(Vector2(500.0, 0.0), Vector2(500.0, 500.0)),
+						LineSegment(Vector2(100.0, 400.0), Vector2(400.0, 100.0))
 				)
 
-				val start = Vector2(100, 100)
-				val goal = Vector2(400, 400)
+				val start = Vector2(100.0, 100.0)
+				val goal = Vector2(400.0, 400.0)
 
 				Maze(walls, start, goal)}
 
@@ -235,12 +238,12 @@ object SimpleMazeEvolution {
 			match = {
 				evolutionState ->
 				synchronized(SortLock.lock) {
-					val sortedSolutions = evolutionState.solutions.sortedBy { e ->
+					val sortedSolutions = evolutionState.solutions.sortedByDescending { e ->
 						val sum = e.behaviour!!.sum()
 						val x = evolutionState.problems.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
 						Math.abs(x!!.behaviour!!.sum() - sum)
 					}
-					val sortedProblems = evolutionState.problems.sortedBy { e ->
+					val sortedProblems = if (evolutionState.problems.size == 1) evolutionState.problems else evolutionState.problems.sortedByDescending { e ->
 						val sum = e.behaviour!!.sum()
 						val x = evolutionState.problems.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
 						Math.abs(x!!.behaviour!!.sum() - sum)
@@ -259,13 +262,13 @@ object SimpleMazeEvolution {
 
 			evaluate = {
 				controller, maze ->
-				val robot = Robot(maze.start, 0.deg, 5.0)
+				val robot = Robot(maze.start.clone(), 0.deg, 5.0)
 				var state = MazeNavigationState(robot = robot,maze = maze, controller = controller)
 				for (i in 1..2000) {
 					state = MazeNavigation.step(state, setting)
 //					if (state.slip.crashed) break
 				}
-				val x = (maze.goal - state.robot.pos).norm
+				val x = maze.goal distanceTo state.robot.pos
 				/* Positive feedback for the solution, negative feedback for the problem. */
 				x to -x
 			}

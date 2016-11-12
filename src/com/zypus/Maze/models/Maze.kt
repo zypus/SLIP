@@ -1,7 +1,7 @@
 package com.zypus.Maze.models
 
 import com.zypus.utilities.LineSegment
-import com.zypus.utilities.Vector2
+import mikera.vectorz.Vector2
 
 /**
  * TODO Add description

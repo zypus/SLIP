@@ -1,5 +1,7 @@
 package com.zypus.utilities
 
+import mikera.vectorz.Vector2
+
 /**
  * TODO Add description
  *
@@ -11,12 +13,12 @@ class Circle(val pos: Vector2, val radius: Double) {
 }
 
 infix fun Circle.intersect(segment: LineSegment): Boolean {
-	val d = segment.to - segment.from
-	val f = segment.from - this.pos
+	val d = segment.to.subCopy(segment.from)
+	val f = segment.from.subCopy(this.pos)
 
-	val a = d dot d
-	val b = 2.0 * (f dot d)
-	val c = (f dot f) - radius * radius
+	val a = d.dotProduct(d)
+	val b = 2.0 * (f.dotProduct(d))
+	val c = (f.dotProduct(f)) - radius * radius
 
 	var dis = b*b - 4*a*c
 	if (dis < 0) {
@@ -32,7 +34,7 @@ infix fun Circle.intersect(segment: LineSegment): Boolean {
 			return true
 		}
 
-		if (t2 >= 0 && t2 >= 1) {
+		if (t2 >= 0 && t2 <= 1) {
 			return true
 		}
 

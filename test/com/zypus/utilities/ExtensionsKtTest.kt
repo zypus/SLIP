@@ -3,8 +3,6 @@ package com.zypus.utilities
 import org.junit.Assert
 import org.junit.Test
 
-import org.junit.Assert.*
-
 /**
  * TODO Add description
 
@@ -27,7 +25,6 @@ class ExtensionsKtTest {
 
 		val actual = bools.toDouble()
 		Assert.assertEquals(1.0, actual, 1e-50)
-
 	}
 
 	@Test

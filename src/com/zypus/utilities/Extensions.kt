@@ -1,5 +1,7 @@
 package com.zypus.utilities
 
+import mikera.vectorz.Vector2
+
 /**
  * TODO Add description
  *
@@ -35,4 +37,24 @@ fun List<Boolean>.toDouble(signBit: Boolean = true, exponentBits: Int = 11, mant
 	println("Sign: $sign Frac: $frac Exp: $exp")
 
 	return sign * frac * Math.pow(2.0, exp-exponentBias)
+}
+
+operator fun Vector2.component1() = this.x
+operator fun Vector2.component2() = this.y
+
+infix fun List<Double>.dot(other: List<Double>) = this.zip(other).map { it.first * it.second }.sum()
+
+infix fun Vector2.distanceTo(other: Vector2) = Math.sqrt(Math.pow(this.x-other.x,2.0)+Math.pow(this.y-other.y, 2.0))
+
+infix fun Vector2.angleTo(other: Vector2): Angle {
+	val a = Math.atan2(y, x)
+	val b = Math.atan2(other.y, other.x)
+	return Angle(b - a)
+}
+
+fun Vector2.rotate(angle: Angle) {
+	val newX = x * Math.cos(angle.rad) - y * Math.sin(angle.rad)
+	val newY = x * Math.sin(angle.rad) + y * Math.cos(angle.rad)
+	x = newX
+	y = newY
 }

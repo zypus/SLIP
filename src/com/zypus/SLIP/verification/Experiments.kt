@@ -127,7 +127,8 @@ fun main(args: Array<String>) {
                     return Statistic(*columns.toTypedArray())
                 }
 
-                override fun update(row: Statistic.Row, generation: Int, state: EvolutionState<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>>) {
+                override fun update(stats: Statistic, generation: Int, state: EvolutionState<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>>) {
+                    val row = stats.newRow()
                     row["cycle"] = generation
                     state.solutions.forEachIndexed { i, entity ->
                         row["s$i fitness"] = entity.behaviour!!.sum()

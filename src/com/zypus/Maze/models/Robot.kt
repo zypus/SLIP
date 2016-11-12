@@ -1,7 +1,7 @@
 package com.zypus.Maze.models
 
 import com.zypus.utilities.Angle
-import com.zypus.utilities.Vector2
+import mikera.vectorz.Vector2
 
 /**
  * TODO Add description
@@ -10,6 +10,4 @@ import com.zypus.utilities.Vector2
  *
  * @created 22/10/2016
  */
-data class Robot(val pos: Vector2, val rot: Angle, val radius: Double) {
-
-}
+data class Robot(val pos: Vector2, val rot: Angle, val radius: Double)
