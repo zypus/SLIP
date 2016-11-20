@@ -14,15 +14,15 @@ fun main(args: Array<String>) {
 
     val runs = 10
     val indis = 50
-    val expName = "nonoise4000"
+    val expName = "seed4000"
 
     val writer = File("benchedExperiments/$expName/data.csv").printWriter()
 
     // Write out header
-    val combinedHeader = arrayListOf("algorithm", "cycle", "replication", "entity", "slip.fitness", "a", "b", "c", "d", "l", "m", "slip.benchmark", "terrain.fitness", "height", "power", "roughness", "displacement", "spikiness", "ascension", "terrain.benchmark", "difficulty")
+    val combinedHeader = arrayListOf("algorithm", "cycle", "replication", "entity", "slip.fitness", "a", "b", "c", "d", "l", "m", "slip.benchmark.stability", "slip.benchmark.distance", "terrain.fitness", "height", "power", "roughness", "displacement", "spikiness", "ascension", "terrain.benchmark.stability", "terrain.benchmark.distance", "difficulty")
     writer.println(combinedHeader.joinToString(separator = ","))
 
-    val algorithms = arrayListOf("terrain.diversity", "slip.diversity", "both.fitness", "both.diversity")
+    val algorithms = arrayListOf("terrain.diversity", "slip.diversity", "both.fitness", "both.fitness.adaptive", "both.diversity")
     for (filename in algorithms) {
         for (r in 1..runs) {
             val reader = File("benchedExperiments/$expName/$filename$r.csv").bufferedReader()

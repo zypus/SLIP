@@ -54,7 +54,7 @@ fun main(args: Array<String>) {
 
     val times: MutableList<Long> = arrayListOf()
 
-    val expName = "seed4000"
+    val expName = "random4000"
     File("benchedExperiments/$expName").mkdir()
     File("results/$expName").mkdir()
 
@@ -93,7 +93,7 @@ fun main(args: Array<String>) {
             }
         }
 
-        r = 1+ r % runs
+        r = 1+ (r % runs)
 
         println("Beginning run $r")
 
@@ -146,7 +146,7 @@ fun main(args: Array<String>) {
                         row["p$i power"] = terrain.power
                         row["p$i roughness"] = terrain.roughness
                         row["p$i displace"] = terrain.displace
-                        row["p$i difficulty"] = terrain.displace * terrain.roughness * terrain.exp + terrain.height
+                        row["p$i difficulty"] = terrain.displace * terrain.roughness * terrain.exp
                         row["p$i spikiness"] = TerrainDifficulty.spikiness(entity.phenotype.terrain)
                         row["p$i ascension"] = TerrainDifficulty.ascension(entity.phenotype.terrain)
                     }

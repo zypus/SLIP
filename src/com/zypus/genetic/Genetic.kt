@@ -40,7 +40,7 @@ data class Entity<G : Any, P : Any, B: Any, BC: Any>(val genotype: G, var behavi
 	}
 }
 
-data class Selection<G : Any, P : Any, B : Any, BC: Any>(val childCount: Int, val parents: List<Pair<Entity<G, P, B, BC>, Entity<G, P, B, BC>>>, val toBeRemoved: List<Entity<G, P, B, BC>> = arrayListOf())
+data class Selection<G : Any, P : Any, B : Any, BC: Any>(val childCount: Int, val parents: List<Pair<Entity<G, P, B, BC>, Entity<G, P, B, BC>>>, val toBeRemoved: List<Entity<G, P, B, BC>> = arrayListOf(), val toBeReplaced: List<Entity<G, P, B, BC>> = arrayListOf())
 
 interface Evolver<G : Any, P : Any, B : Any, BC: Any, OG : Any, OP : Any, OB : Any, OBC: Any> {
 	fun phenotypeMapping(genotype: G): P
@@ -107,15 +107,15 @@ class EvolutionRules<SG : Any, SP : Any, SB : Any, SBC : Any, PG : Any, PP : Any
 	private fun <G : Any, P : Any, B: Any, BC: Any, OG : Any, OP : Any, OB : Any, OBC: Any> selectAndReproduce(population: List<Entity<G, P, B, BC>>, evolver: Evolver<G, P, B, BC, OG, OP, OB, OBC>): SRResult<G,P,B,BC> {
 		val selection = evolver.select(population)
 		if (selection != null) {
-			val (count, parentCandidates, toBeRemoved) = selection
-			val filtered = population.filter { !toBeRemoved.contains(it) }
+			val (count, parentCandidates, toBeRemoved, toBeReplaced) = selection
+			val filtered = population.filter { !toBeRemoved.contains(it) && !toBeReplaced.contains(it) }
 			val children = (1..count).map {
 				val (mother, father) = parentCandidates.pickRandom { Math.random() }
 				val childGenotype = evolver.reproduce(mother.genotype, father.genotype)
 				Entity<G, P, B, BC>(genotype = childGenotype, behaviour = evolver.initializeBehaviour(), phenoMapping = { evolver.phenotypeMapping(it) })
 			}
 
-			val nextGeneration = filtered + children
+			val nextGeneration = filtered + children + toBeReplaced.map { Entity<G, P, B, BC>(genotype = evolver.initialize(), behaviour = evolver.initializeBehaviour(),  phenoMapping = { evolver.phenotypeMapping(it) }) }
 			return SRResult(nextGeneration, toBeRemoved)
 		} else {
 			return SRResult(population, arrayListOf())
