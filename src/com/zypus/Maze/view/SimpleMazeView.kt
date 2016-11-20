@@ -6,14 +6,13 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.zypus.Maze.algorithms.GenericMazeEvolution
 import com.zypus.Maze.algorithms.RnnMazeEvolution
 import com.zypus.Maze.controller.ARobotController
-import com.zypus.Maze.controller.RnnRobotController
+import com.zypus.Maze.controller.DeepRnnRobotController
 import com.zypus.Maze.models.Maze
 import com.zypus.Maze.models.MazeNavigationState
 import com.zypus.Maze.models.Robot
 import com.zypus.SLIP.algorithms.genetic.Entity
 import com.zypus.SLIP.algorithms.genetic.EvolutionState
 import com.zypus.SLIP.controllers.StatisticDelegate
-import com.zypus.SLIP.models.SimulationSetting
 import com.zypus.SLIP.models.Statistic
 import com.zypus.utilities.LineSegment
 import com.zypus.utilities.deg
@@ -51,13 +50,17 @@ class SimpleMazeView : View() {
 
 		val maze = Maze(walls, start, goal)
 
-		val robot = Robot(start, 0.deg, 5.0)
+		val robot = Robot(start.clone(), 0.deg, 5.0)
 
-		val setting = SimulationSetting()
+		val setting = RnnMazeEvolution.setting
 
 		fun solutionSort(population: List<Entity<List<Double>, ARobotController, Double, MutableList<Double>>>): List<Entity<List<Double>, ARobotController, Double, MutableList<Double>>> {
 			return population.sortedByDescending {
-				e -> e.behaviour!!.sum()
+				e ->
+				e.behaviour!!.sum()
+//				val sum = e.behaviour!!.sum()
+//				val x = population.filter { it != e }.minBy { Math.abs(it.behaviour!!.sum() - sum) }
+//				Math.abs(x!!.behaviour!!.sum() - sum)
 			}
 		}
 
@@ -79,14 +82,15 @@ class SimpleMazeView : View() {
 			if (it != null) {
 				val behaviour = (evolver.bestSolution.behaviour!! as List<Double>)
 				val score = behaviour.sum() / behaviour.size
-				val dif = evolver.solutions.sumByDouble { e ->
-					val sum = (e.behaviour!! as List<Double>).sum()
-					val x = evolver.solutions.filter { it != e }.minBy {
-						Math.abs((it.behaviour!! as List<Double>).sum() - sum)
-					}
-					Math.abs((x!!.behaviour!! as List<Double>).sum() - sum) / behaviour!!.size
-				} / evolver.solutions.size
-				print("\r%3.1f%% %.1f %.1f".format(100*it, score, dif))
+				val scores = evolver.solutions.map {
+					(it.behaviour!! as List<Double>).sum() / behaviour.size
+				}
+				val mean = scores.sum()/evolver.solutions.size
+				val variance = scores.sumByDouble {
+					val x = it - mean
+					x * x
+				} / (evolver.solutions.size - 1)
+				print("\r%3.1f%% mean score: %.1f var: %.1f".format(100 * it, score, variance))
 			}
 		}
 
@@ -97,11 +101,11 @@ class SimpleMazeView : View() {
 
 		var computeOrLoad: Boolean? = null
 
-		alert(Alert.AlertType.CONFIRMATION, "Load or Compute?", "Do you want to load or compute a solution.", ButtonType("Load", ButtonBar.ButtonData.NO), ButtonType("Compute",ButtonBar.ButtonData.YES), ButtonType.CANCEL ) {
+		alert(Alert.AlertType.CONFIRMATION, "Load or Compute?", "Do you want to load or compute a solution.", ButtonType("Load", ButtonBar.ButtonData.NO), ButtonType("Compute", ButtonBar.ButtonData.YES), ButtonType.CANCEL) {
 			button ->
 			when (button.text) {
 				"Compute" -> computeOrLoad = true
-				"Load" -> computeOrLoad = false
+				"Load"    -> computeOrLoad = false
 			}
 		}
 
@@ -113,22 +117,24 @@ class SimpleMazeView : View() {
 
 			runAsync {
 				if (computeOrLoad!!) {
-					val winner = evolver.evolve(100, 100, 10000, object : StatisticDelegate<List<Double>, ARobotController, Double, MutableList<Double>, List<Double>, Maze, Double, MutableList<Double>> {
+					val winner = evolver.evolve(200, 200, 5000, object : StatisticDelegate<List<Double>, ARobotController, Double, MutableList<Double>, List<Double>, Maze, Double, MutableList<Double>> {
 						override fun initialize(solutionCount: Int, problemCount: Int): Statistic {
 							return Statistic("cycle", "score")
 						}
 
 						override fun update(stats: Statistic, generation: Int, state: EvolutionState<List<Double>, ARobotController, Double, MutableList<Double>, List<Double>, Maze, Double, MutableList<Double>>) {
-							state.solutions.forEach {
-								val row = stats.newRow()
-								row["cycle"] = generation
-								row["score"] = it.behaviour!!.sum()
-							}
-							val currentBestController = solutionSort(state.solutions).first().phenotype.copy()
-							val currentBestMaze = problemSort(state.problems).first().phenotype
+							if (generation % 10 == 0) {
+								state.solutions.forEach {
+									val row = stats.newRow()
+									row["cycle"] = generation
+									row["score"] = it.behaviour!!.sum()
+								}
+								val currentBestController = solutionSort(state.solutions).first().phenotype.copy()
+								val currentBestMaze = problemSort(state.problems).first().phenotype
 
-							Platform.runLater {
-								debug.drawMatchup(debug.canvas.graphicsContext2D, currentBestMaze, currentBestController)
+								Platform.runLater {
+									debug.drawMatchup(debug.canvas.graphicsContext2D, currentBestMaze, currentBestController)
+								}
 							}
 						}
 
@@ -137,7 +143,7 @@ class SimpleMazeView : View() {
 						}
 
 					})
-					val controller = winner.phenotype as RnnRobotController
+					val controller = winner.phenotype as DeepRnnRobotController
 					file.outputStream().use {
 						mapper.writeValue(it, controller)
 					}
@@ -145,19 +151,23 @@ class SimpleMazeView : View() {
 				}
 				else {
 					file.inputStream().use {
-						mapper.readValue(it, RnnRobotController::class.java)
+						mapper.readValue(it, DeepRnnRobotController::class.java)
 					}
 				}
 			}.ui {
 				// remove the debug window before adding the final simulation
 				debug.removeFromParent()
+				it.start()
 				val state = MazeNavigationState(robot, maze, it as ARobotController)
 
 				val frag = MazeFragment(this, state, setting)
 
 				this += frag
+
+//				RnnFragment(it.rnn!!).openModal()
 			}
-		} else {
+		}
+		else {
 			val manual = ManualFragment(this, maze, setting)
 			this += manual
 		}

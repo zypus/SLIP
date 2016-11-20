@@ -263,7 +263,9 @@ object SimpleMazeEvolution {
 			evaluate = {
 				controller, maze ->
 				val robot = Robot(maze.start.clone(), 0.deg, 5.0)
-				var state = MazeNavigationState(robot = robot,maze = maze, controller = controller)
+				val actualControl = controller
+				actualControl.start()
+				var state = MazeNavigationState(robot = robot,maze = maze, controller = actualControl)
 				for (i in 1..2000) {
 					state = MazeNavigation.step(state, setting)
 //					if (state.slip.crashed) break

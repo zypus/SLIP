@@ -39,17 +39,17 @@ fun List<Boolean>.toDouble(signBit: Boolean = true, exponentBits: Int = 11, mant
 	return sign * frac * Math.pow(2.0, exp-exponentBias)
 }
 
-operator fun Vector2.component1() = this.x
-operator fun Vector2.component2() = this.y
+inline operator fun Vector2.component1() = this.x
+inline operator fun Vector2.component2() = this.y
 
 infix fun List<Double>.dot(other: List<Double>) = this.zip(other).map { it.first * it.second }.sum()
 
 infix fun Vector2.distanceTo(other: Vector2) = Math.sqrt(Math.pow(this.x-other.x,2.0)+Math.pow(this.y-other.y, 2.0))
 
-infix fun Vector2.angleTo(other: Vector2): Angle {
+infix fun Vector2.angleTo(other: Vector2): Double {
 	val a = Math.atan2(y, x)
 	val b = Math.atan2(other.y, other.x)
-	return Angle(b - a)
+	return normalizeAngle(b - a)
 }
 
 fun Vector2.rotate(angle: Angle) {
@@ -58,3 +58,10 @@ fun Vector2.rotate(angle: Angle) {
 	x = newX
 	y = newY
 }
+
+inline fun normalizeAngle(angle: Double) = (angle % (2 * Math.PI)).let {
+	if (it > Math.PI) -Math.PI + (it - Math.PI)
+	else if (it < -Math.PI) Math.PI + (it + Math.PI)
+	else it
+}
+

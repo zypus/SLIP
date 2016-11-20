@@ -36,18 +36,18 @@ val epsilon = 1E-4
 
 infix fun LineSegment.intersect(other: LineSegment): Vector2? {
 	val intersection = Line(from, to) intersect Line(other.from, other.to)
-	if (intersection != null) {
+	intersection?.let {
 		if (
-				intersection.x >= min(from.x, to.x) - epsilon &&
-				intersection.x <= max(from.x, to.x) + epsilon &&
-				intersection.y >= min(from.y, to.y) - epsilon &&
-				intersection.y <= max(from.y, to.y) + epsilon &&
-				intersection.x >= min(other.from.x, other.to.x) - epsilon &&
-				intersection.x <= max(other.from.x, other.to.x) + epsilon &&
-				intersection.y >= min(other.from.y, other.to.y) - epsilon &&
-				intersection.y <= max(other.from.y, other.to.y) + epsilon
+				it.x >= min(from.x, to.x) - epsilon &&
+				it.x <= max(from.x, to.x) + epsilon &&
+				it.y >= min(from.y, to.y) - epsilon &&
+				it.y <= max(from.y, to.y) + epsilon &&
+				it.x >= min(other.from.x, other.to.x) - epsilon &&
+				it.x <= max(other.from.x, other.to.x) + epsilon &&
+				it.y >= min(other.from.y, other.to.y) - epsilon &&
+				it.y <= max(other.from.y, other.to.y) + epsilon
 		) {
-			return intersection
+			return it
 		}
 	}
 	return null

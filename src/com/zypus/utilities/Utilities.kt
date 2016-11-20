@@ -1,8 +1,7 @@
 package com.zypus.utilities
 
-import golem.end
-import golem.mat
-import golem.matrix.Matrix
+import mikera.matrixx.Matrix
+import mikera.vectorz.Vector
 import java.lang.Math.min
 import java.lang.Math.sqrt
 
@@ -70,29 +69,12 @@ inline fun <T, R> List<T>.mapParallel(crossinline function: (T) -> R): List<R> {
 	return results.flatMap { it }
 }
 
-fun List<Double>.toMatrix(c: Int, r: Int): Matrix<Double> {
+fun List<Double>.toMatrix(c: Int, r: Int): Matrix {
 	val count = c * r
 	val slice = this.slice(0..count - 1)
+	return Matrix.wrap(r, c, slice.toDoubleArray())
+}
 
-	val elements: Array<Any> = if (c != 1 && r != 1) {
-		slice.mapIndexed { i: Int, d: Double ->
-			if (i % c == c - 1 && i != count - 1) {
-				d end slice[i + 1]
-			}
-			else if (i != 0 && i % c == 0) {
-				null
-			}
-			else {
-				d
-			}
-		}.filterNotNull().toTypedArray()
-	}
-	else {
-		slice.toTypedArray()
-	}
-	var matrix = mat.get(*elements)
-	if (c == 1) {
-		matrix = matrix.T
-	}
-	return matrix
+fun List<Double>.toVector(): Vector {
+	return Vector.create(this.toDoubleArray())
 }

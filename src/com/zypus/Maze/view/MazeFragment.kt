@@ -1,11 +1,14 @@
 package com.zypus.Maze.view
 
+import com.zypus.Maze.controller.DeepRnnRobotController
+import com.zypus.Maze.models.Maze
 import com.zypus.Maze.models.MazeNavigationState
 import com.zypus.Maze.models.RangeFinder
 import com.zypus.Maze.simulation.MazeNavigation
 import com.zypus.SLIP.models.SimulationSetting
 import com.zypus.gui.ResizableCanvas
 import com.zypus.utilities.Angle
+import com.zypus.utilities.LineSegment
 import com.zypus.utilities.angleTo
 import com.zypus.utilities.rotate
 import javafx.scene.Parent
@@ -13,6 +16,8 @@ import javafx.scene.canvas.GraphicsContext
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.shape.ArcType
+import javafx.stage.Modality
+import mikera.vectorz.Vector2
 import org.reactfx.EventStreams
 import org.reactfx.Subscription
 import tornadofx.Fragment
@@ -29,26 +34,48 @@ class MazeFragment(val parent: Parent, var state: MazeNavigationState, setting: 
 	val canvas = ResizableCanvas(width, height)
 	override val root = VBox(canvas)
 
+	val maze1 = {
+		val walls = arrayListOf(
+				LineSegment(Vector2(0.0, 0.0), Vector2(0.0, 500.0)),
+				LineSegment(Vector2(0.0, 500.0), Vector2(500.0, 500.0)),
+				LineSegment(Vector2(0.0, 0.0), Vector2(500.0, 0.0)),
+				LineSegment(Vector2(500.0, 0.0), Vector2(500.0, 500.0)),
+				LineSegment(Vector2(100.0, 400.0), Vector2(400.0, 100.0))
+		)
+
+		val start = Vector2(100.0, 100.0)
+		val goal = Vector2(400.0, 400.0)
+
+		Maze(walls, start, goal)
+	}()
+
 	init {
 		val gc = canvas.graphicsContext2D
-		var s = MazeNavigationState(state.robot, state.maze, state.controller.copy())
+		var controller = state.controller.copy()
+		controller.start()
+
+		var maze = maze1
+
+		var s = MazeNavigationState(state.robot, maze, controller)
 		drawState(gc,s)
 
 		var count = 0
 
+		val rnnVisu = LiveRnnFragment()
+		rnnVisu.openModal(modality = Modality.NONE)
+
 		var subscription: Subscription? = null
-		subscription = EventStreams.animationFrames()
+		subscription = EventStreams.animationTicks()
 				.feedTo {
 					canvas.requestFocus()
 					if (!root.parent.scene.window.isShowing) {
 						subscription!!.unsubscribe()
 					}
 					else {
-						if (count < 5000) {
-							s = MazeNavigation.step(s, setting)
-							drawState(gc,s)
-							count++
-						}
+						s = MazeNavigation.step(s, setting)
+						drawState(gc,s)
+						rnnVisu.update((controller as DeepRnnRobotController).rnn!!, controller.latestInputs.dropLast(1), controller.latestOutput)
+						count++
 					}
 				}
 
@@ -56,7 +83,20 @@ class MazeFragment(val parent: Parent, var state: MazeNavigationState, setting: 
 			setOnKeyTyped {
 				if (it.character == "r") {
 					count = 0
-					s = MazeNavigationState(state.robot, state.maze, state.controller.copy())
+					controller = state.controller.copy()
+					controller.start()
+					s = MazeNavigationState(state.robot.copy(maze.start.clone()), maze, controller)
+				} else if (it.character in "123") {
+					count = 0
+					controller = state.controller.copy()
+					controller.start()
+					maze = when (it.character) {
+						"1" -> maze1
+						"2" -> maze2
+						"3" -> maze3
+						else -> maze1
+					}
+					s = MazeNavigationState(state.robot.copy(maze.start.clone()), maze, controller)
 				}
 			}
 		}
@@ -130,13 +170,43 @@ class MazeFragment(val parent: Parent, var state: MazeNavigationState, setting: 
 			dirToGoal.sub(robot.pos)
 			val angle = orientation angleTo dirToGoal
 			control.pieGoalFinder.forEachIndexed { i, it ->
-				if (angle in it) {
+				if (it.contains(angle)) {
 					val r = 30.0
 					val a = -Angle(it.endInclusive.rad + robot.rot.rad).deg
 					gc.fillArc(robot.pos.x - r, robot.pos.y - r, 2 * r, 2 * r, a, -90.0, ArcType.CHORD)
 				}
 			}
 		}
+	}
+
+	val maze2 by lazy {
+		val walls = arrayListOf(
+				LineSegment(Vector2(0.0, 0.0), Vector2(0.0, 500.0)),
+				LineSegment(Vector2(0.0, 500.0), Vector2(500.0, 500.0)),
+				LineSegment(Vector2(0.0, 0.0), Vector2(500.0, 0.0)),
+				LineSegment(Vector2(500.0, 0.0), Vector2(500.0, 500.0)),
+				LineSegment(Vector2(50.0, 250.0), Vector2(450.0, 250.0))
+		)
+
+		val start = Vector2(100.0, 100.0)
+		val goal = Vector2(400.0, 400.0)
+
+		Maze(walls, start, goal)
+	}
+
+	val maze3 by lazy {
+		val walls = arrayListOf(
+				LineSegment(Vector2(0.0, 0.0), Vector2(0.0, 500.0)),
+				LineSegment(Vector2(0.0, 500.0), Vector2(500.0, 500.0)),
+				LineSegment(Vector2(0.0, 0.0), Vector2(500.0, 0.0)),
+				LineSegment(Vector2(500.0, 0.0), Vector2(500.0, 500.0)),
+				LineSegment(Vector2(250.0, 50.0), Vector2(250.0, 400.0))
+		)
+
+		val start = Vector2(50.0, 250.0)
+		val goal = Vector2(400.0, 250.0)
+
+		Maze(walls, start, goal)
 	}
 
 }

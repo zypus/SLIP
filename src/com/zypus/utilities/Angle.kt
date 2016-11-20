@@ -19,6 +19,10 @@ class Angle(rad: Double): Comparable<Angle> {
 		return this.rad.compareTo(other.rad)
 	}
 
+	operator fun compareTo(other: Double): Int {
+		return this.rad.compareTo(other)
+	}
+
 	operator fun plus(other: Angle): Angle = Angle(rad + other.rad)
 
 	operator fun minus(other: Angle): Angle = Angle(rad - other.rad)

@@ -1,6 +1,7 @@
 package com.zypus.Maze
 
 import com.zypus.Maze.view.SimpleMazeView
+import golem.matrix.jblas.JBlasMatrixFactory
 import javafx.application.Application
 import tornadofx.App
 
@@ -17,5 +18,6 @@ class SimpleMazeMain : App() {
 }
 
 fun main(args: Array<String>) {
+	golem.factory = JBlasMatrixFactory()
 	Application.launch(SimpleMazeMain::class.java, *args)
 }

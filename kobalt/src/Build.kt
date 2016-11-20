@@ -28,10 +28,12 @@ val p = project {
 		compile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.8.3")
 		compile("net.mikera:vectorz:0.64.0")
 		compile("com.googlecode.matrix-toolkits-java:mtj:1.0.1")
-		compile("golem:golem-backend-mtj:0.6")
-		compile("golem:golem-core:0.6")
+		compile("org.jblas:jblas:1.2.4")
+		compile("golem:golem-backend-jblas:0.7")
+		compile("golem:golem-backend-mtj:0.7")
+		compile("golem:golem-core:0.7")
 		compile("org.knowm.xchart:xchart:3.2.1")
-		compile("com.syncleus.aparapi:aparapi:1.0.0")
+		compile("net.sourceforge.plantuml:plantuml:8049")
 	}
 
 	dependenciesTest {

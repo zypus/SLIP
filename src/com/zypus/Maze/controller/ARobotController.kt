@@ -40,6 +40,9 @@ abstract class ARobotController {
 
 	data class Steering(val leftRight: Double, val upDown: Double)
 
+	var latestInputs: List<Double> = arrayListOf()
+	var latestOutput: List<Double> = arrayListOf()
+
 	fun inputs(robot: Robot, maze: Maze): List<Double> {
 		val ranges = rangeFinders.map { // rotate the range finder by the rotation of the robot
 			val ret = it.clone()
@@ -57,11 +60,15 @@ abstract class ARobotController {
 		orientation.rotate(robot.rot)
 		val angle = dirToGoal angleTo orientation
 		val pies = pieGoalFinder.map {
-			if (angle in it) 5.0 else 0.0
+			if (it.contains(angle)) 5.0 else 0.0
 		}
 		assert(pies.count { it == 1.0 } == 1)
-		val inputs = arrayListOf(*ranges.toTypedArray(), *pies.toTypedArray(), 1.0)
-		return inputs
+		latestInputs = arrayListOf(*ranges.toTypedArray(), *pies.toTypedArray(), 1.0)
+		return latestInputs
+	}
+
+	open fun start() {
+
 	}
 
 	abstract fun control(robot: Robot, maze: Maze): Steering
