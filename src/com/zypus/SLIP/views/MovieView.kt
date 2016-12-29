@@ -5,7 +5,7 @@ import com.zypus.SLIP.models.*
 import com.zypus.SLIP.models.terrain.BlendTerrain
 import com.zypus.SLIP.models.terrain.MidpointTerrain
 import com.zypus.SLIP.models.terrain.Terrain
-import com.zypus.utilities.Vector2
+import mikera.vectorz.Vector2
 import javafx.application.Application
 import javafx.embed.swing.SwingFXUtils
 import javafx.event.ActionEvent
@@ -51,8 +51,8 @@ class MovieView() : View() {
 ////					controller = SpringController()
 //			),
 			slip = SLIP(
-					position = Vector2(0, 300),
-					velocity = Vector2(0, 0),
+					position = Vector2(0.0, 300.0),
+					velocity = Vector2(0.0, 0.0),
 					angle = 0.0,
 					restLength = 49.19465,
 					mass = 1.1262529,
@@ -104,15 +104,15 @@ class MovieView() : View() {
 
 	fun timelineSLIP(step: Int, slip: SLIP): SLIP {
 		return when (step / 100) {
-			0    -> slip.copy(mass = 1.0, restLength = 100.0, radius = 10.0, position = Vector2(0,400))
-			1    -> slip.copy(mass = 1.0, restLength = 150.0, radius = 20.0, position = Vector2(0,400))
-			2    -> slip.copy(mass = 1.0, restLength = 50.0, radius = 30.0, position = Vector2(0,400))
-			3    -> slip.copy(mass = 1.0, restLength = 50.0, radius = 20.0, position = Vector2(0,400))
-			4    -> slip.copy(mass = 1.0, restLength = 150.0, radius = 10.0, position = Vector2(0,400))
-			5    -> slip.copy(mass = 1.0, restLength = 100.0, radius = 20.0, position = Vector2(0,400))
-			6    -> slip.copy(mass = 1.0, restLength = 150.0, radius = 30.0, position = Vector2(0,400))
-			7    -> slip.copy(mass = 1.0, restLength = 100.0, radius = 20.0, position = Vector2(0,400))
-			else -> slip.copy(mass = 1.0, restLength = 50.0, radius = 10.0, position = Vector2(0,400))
+			0    -> slip.copy(mass = 1.0, restLength = 100.0, radius = 10.0, position = Vector2(0.0,400.0))
+			1    -> slip.copy(mass = 1.0, restLength = 150.0, radius = 20.0, position = Vector2(0.0,400.0))
+			2    -> slip.copy(mass = 1.0, restLength = 50.0, radius = 30.0, position = Vector2(0.0,400.0))
+			3    -> slip.copy(mass = 1.0, restLength = 50.0, radius = 20.0, position = Vector2(0.0,400.0))
+			4    -> slip.copy(mass = 1.0, restLength = 150.0, radius = 10.0, position = Vector2(0.0,400.0))
+			5    -> slip.copy(mass = 1.0, restLength = 100.0, radius = 20.0, position = Vector2(0.0,400.0))
+			6    -> slip.copy(mass = 1.0, restLength = 150.0, radius = 30.0, position = Vector2(0.0,400.0))
+			7    -> slip.copy(mass = 1.0, restLength = 100.0, radius = 20.0, position = Vector2(0.0,400.0))
+			else -> slip.copy(mass = 1.0, restLength = 50.0, radius = 10.0, position = Vector2(0.0,400.0))
 		}
 	}
 

@@ -41,34 +41,36 @@ class MatchupFragment : Fragment() {
 		gc.stroke = Color.BLACK
 		gc.fill = Color.BLACK
 
+		val scale = 10.0
+
 		val (walls, start, goal) = maze
 
 		gc.beginPath()
 		walls.forEach {
 			wall ->
 			val (from, to) = wall
-			gc.moveTo(from.x, from.y)
-			gc.lineTo(to.x, to.y)
+			gc.moveTo(scale*from.x, scale *from.y)
+			gc.lineTo(scale *to.x, scale *to.y)
 		}
 		gc.stroke()
 
-		gc.fillOval(start.x - markerRadius, start.y - markerRadius, 2 * markerRadius, 2 * markerRadius)
-		gc.fillRect(goal.x - markerRadius, goal.y - markerRadius, 2 * markerRadius, 2 * markerRadius)
+		gc.fillOval(scale *start.x - markerRadius, scale *start.y - markerRadius, 2 * markerRadius, 2 * markerRadius)
+		gc.fillRect(scale *goal.x - markerRadius, scale *goal.y - markerRadius, 2 * markerRadius, 2 * markerRadius)
 
 		gc.beginPath()
-		gc.moveTo(start.x, start.y)
+		gc.moveTo(scale *start.x, scale *start.y)
 
-		val robot = Robot(maze.start.clone(), 0.deg, 5.0)
+		val robot = Robot(maze.start.clone(), maze.orientation.deg, 0.5)
 
 		gc.stroke = Color.GREEN
 
 		controller.start()
 		var state = MazeNavigationState(robot = robot, maze = maze, controller = controller)
-		for (i in 1..2000) {
+		for (i in 1..500) {
 			state = MazeNavigation.step(state, RnnMazeEvolution.setting)
 			if (i % 25 == 0) {
 				val (x, y) = state.robot.pos
-				gc.lineTo(x, y)
+				gc.lineTo(scale *x, scale *y)
 			}
 		}
 		gc.stroke()

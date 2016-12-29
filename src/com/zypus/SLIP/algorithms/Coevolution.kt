@@ -11,7 +11,7 @@ import com.zypus.SLIP.models.terrain.CompositeTerrain
 import com.zypus.SLIP.models.terrain.FlatTerrain
 import com.zypus.SLIP.models.terrain.SinusTerrain
 import com.zypus.SLIP.models.terrain.Terrain
-import com.zypus.utilities.Vector2
+import mikera.vectorz.Vector2
 import java.lang.Math.PI
 import java.util.*
 
@@ -231,7 +231,7 @@ object Coevolution {
 			evaluate = {
 				controller, environment ->
 				val ix = random.nextDouble() * 40.0 - 20.0
-				var state = SimulationState(SLIP(Initial(Vector2(ix, 200))).copy(controller = controller), environment)
+				var state = SimulationState(SLIP(Initial(Vector2(ix, 200.0))).copy(controller = controller), environment)
 				for (i in 1..2000) {
 					state = SimulationController.step(state, setting)
 					if (state.slip.crashed) break

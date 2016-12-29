@@ -8,7 +8,6 @@ import com.zypus.SLIP.verification.TestTerrains
 import com.zypus.gui.ChartFragment
 import com.zypus.gui.EvolutionFragment
 import com.zypus.gui.FitnessChart
-import com.zypus.utilities.Vector2
 import impl.org.controlsfx.skin.DecorationPane
 import javafx.application.Platform
 import javafx.geometry.Insets
@@ -20,6 +19,7 @@ import javafx.scene.control.TabPane
 import javafx.scene.control.TextField
 import javafx.scene.layout.VBox
 import javafx.stage.Modality
+import mikera.vectorz.Vector2
 import org.controlsfx.tools.ValueExtractor
 import org.controlsfx.validation.Severity
 import org.controlsfx.validation.ValidationSupport
@@ -47,7 +47,7 @@ class SimulationView : View() {
 		//		var state: SimulationState? = null
 		val setting = SimulationSetting(simulationStep = 0.1)
 
-		val initial = Initial(position = Vector2(0, 210), velocity = Vector2(0, 0))
+		val initial = Initial(position = Vector2(0.0, 210.0), velocity = Vector2(0.0, 0.0))
 		val environment = Environment(terrain = SinusTerrain(frequency = 0.1, shift = 0.0, amplitude = 10.0, height = 30.0))
 
 

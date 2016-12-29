@@ -26,7 +26,7 @@ fun GraphicsContext.drawSimulationState(state: SimulationState, markers: Boolean
 
 	// Extract the state information.
 	val (position, velocity, angle, restLength, length, springConstant, mass, radius, standPosition) = state.slip
-	val (x, y) = position
+	val (x, y) = position.elements
 	val (gravity, terrain) = state.environment
 
 	// Shift the viewport to be centered on the slip.

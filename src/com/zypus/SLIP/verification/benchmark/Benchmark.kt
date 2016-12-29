@@ -1,10 +1,11 @@
 package com.zypus.SLIP.verification.benchmark
 
+import com.zypus.SLIP.algorithms.SLIPTerrainEvolution
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
 import com.zypus.SLIP.models.terrain.MidpointTerrain
 import com.zypus.SLIP.models.terrain.Terrain
-import com.zypus.utilities.Vector2
+import mikera.vectorz.Vector2
 import java.io.File
 
 /**
@@ -94,11 +95,18 @@ object Benchmark {
 			val environment = Environment(terrain = terrain)
 			val next = average((-10..10 step 10).fold(initial) {
 				s, offset ->
-				val start = Initial(Vector2(offset, 200))
+				val start = Initial(Vector2(offset.toDouble(), 200.0))
 				val slip = SLIP(start).copy(controller = springController)
 				var state = SimulationState(slip, environment)
-				for (i in 1..1000) {
-					state = SimulationController.step(state, setting)
+//				for (i in 1..1000) {
+//					state = SimulationController.step(state, setting)
+//					if (state.slip.crashed) break
+//				}
+				var jumps = 0
+				while (jumps < 50) {
+					val before = state.slip.grounded
+					state = SimulationController.step(state, SLIPTerrainEvolution.setting)
+					if (before == true && state.slip.grounded == false) jumps++
 					if (state.slip.crashed) break
 				}
 				sum (eval(state,offset.toDouble()), s)
@@ -113,11 +121,18 @@ object Benchmark {
 			val environment = Environment(terrain = terrain)
 			val next = average((-10..10 step 10).fold(initial) {
 				s, offset ->
-				val start = Initial(Vector2(offset, 200))
+				val start = Initial(Vector2(offset.toDouble(), 200.0))
 				val sl = slip.copy(position = start.position, velocity = start.velocity)
 				var state = SimulationState(sl, environment)
-				for (i in 1..1000) {
-					state = SimulationController.step(state, setting)
+//				for (i in 1..1000) {
+//					state = SimulationController.step(state, setting)
+//					if (state.slip.crashed) break
+//				}
+				var jumps = 0
+				while (jumps < 50) {
+					val before = state.slip.grounded
+					state = SimulationController.step(state, SLIPTerrainEvolution.setting)
+					if (before == true && state.slip.grounded == false) jumps++
 					if (state.slip.crashed) break
 				}
 				sum (eval(state,offset.toDouble()), s)
@@ -132,11 +147,18 @@ object Benchmark {
 			value, controller ->
 			val next = average((-10..10 step 10).fold(initial) {
 				s, offset ->
-				val start = Initial(Vector2(offset, 200))
+				val start = Initial(Vector2(offset.toDouble(), 200.0))
 				val slip = SLIP(start).copy(controller = controller)
 				var state = SimulationState(slip, environment)
-				for (i in 1..1000) {
-					state = SimulationController.step(state, setting)
+//				for (i in 1..1000) {
+//					state = SimulationController.step(state, setting)
+//					if (state.slip.crashed) break
+//				}
+				var jumps = 0
+				while (jumps < 50) {
+					val before = state.slip.grounded
+					state = SimulationController.step(state, SLIPTerrainEvolution.setting)
+					if (before == true && state.slip.grounded == false) jumps++
 					if (state.slip.crashed) break
 				}
 				sum (eval(state,offset.toDouble()), s)

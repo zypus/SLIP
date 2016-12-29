@@ -34,7 +34,7 @@ object MazeNavigation {
 		}
 
 		//angular
-		val rot = robot.rot + Angle(leftRight.limit(-0.1,0.1) * delta)
+		val rot = robot.rot + Angle(leftRight.limit(-0.5,0.5) * delta)
 
 //		val moveDir = pos - robot.pos
 

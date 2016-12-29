@@ -10,10 +10,7 @@ import com.zypus.SLIP.algorithms.SortLock
 import com.zypus.SLIP.algorithms.genetic.*
 import com.zypus.SLIP.algorithms.genetic.builder.evolution
 import com.zypus.SLIP.models.SimulationSetting
-import com.zypus.utilities.LineSegment
-import com.zypus.utilities.MatrixProxy
-import com.zypus.utilities.deg
-import com.zypus.utilities.distanceTo
+import com.zypus.utilities.*
 import mikera.vectorz.Vector2
 import java.util.*
 
@@ -36,7 +33,7 @@ object RnnMazeEvolution {
 			val problemMatching: (List<Entity<List<Double>, Maze, Double, MutableList<Double>>>) -> List<Entity<List<Double>, Maze, Double, MutableList<Double>>> = problemSelection
 	)
 
-	val setting = SimulationSetting(0.2)
+	val setting = SimulationSetting(0.05)
 
 	fun rule(selectors: Selectors) = evolution<List<Double>, ARobotController, Double, MutableList<Double>, List<Double>, Maze, Double, MutableList<Double>> {
 
@@ -69,7 +66,7 @@ object RnnMazeEvolution {
 
 		fun crossOverMutation(mother: List<Double>, father: List<Double>, cRate: Double, mRate: Double, sRate: Double, change: Double, bounds: List<Pair<Double, Double>>): List<Double> {
 			val crossover = mother.crossover(father, cRate)
-			return crossover.mutate(mRate) {
+			return crossover.mutate(mRate, normalize = false) {
 				i, e ->
 				val bound = if (bounds.size > i) {
 					bounds[i]
@@ -89,7 +86,7 @@ object RnnMazeEvolution {
 						resolveBound(bound)
 					}
 				}
-			}.map(::kernel)
+			}.toList()
 		}
 
 		fun createProxies(data: List<Double>, layer: List<Int>): List<MatrixProxy> {
@@ -116,7 +113,9 @@ object RnnMazeEvolution {
 
 		/* MARK: Solution */
 
-		val historySize = 10
+		val mazeSize = 50.0
+
+		val historySize = 20
 
 		val layer = arrayListOf(10, 16, 2)
 
@@ -148,12 +147,14 @@ object RnnMazeEvolution {
 			refine = {
 				el, n ->
 				synchronized(SortLock.lock) {
-					selectors.solutionRemoval(el.toList()).take(n)
+					val sorted = selectors.solutionRemoval(el).reversed()
+					val unlucky = sorted.linearSelection(1.5,random)
+					sorted.filter { it != unlucky }
 				}
 			}
 
 			reproduce = { mother, father ->
-				crossOverMutation(mother, father, cRate = 2.0, mRate = 5.0, sRate = 0.4, change = 0.05, bounds = solutionBounds)
+				crossOverMutation(mother, father, cRate = 0.0, mRate = 0.05, sRate = 0.4, change = 0.05, bounds = solutionBounds).map(::kernel)
 			}
 
 			behaviour = {
@@ -173,19 +174,19 @@ object RnnMazeEvolution {
 		/* MARK: Problem */
 
 		val problemBounds = arrayListOf(
-				20.0 to 480.0,
+				0.1 to 0.9,
 				-180.0 to 180.0,
-				10.0 to 490.0,
-				10.0 to 490.0,
-				10.0 to 490.0,
-				10.0 to 490.0
+				mazeSize * 0.02 to mazeSize * 0.98,
+				mazeSize * 0.02 to mazeSize * 0.98,
+				mazeSize * 0.02 to mazeSize * 0.98,
+				mazeSize * 0.02 to mazeSize * 0.98
 		)
 
 		problem = {
 
 			/* Initialize according to the bounds above. */
 			initialize = {
-				(0..13).mapIndexed { i, v ->
+				(0..8).mapIndexed { i, v ->
 					// Either use the bound that is provided for the index, or use first bound (assumed to be the bound for all indices)
 					resolveBound(problemBounds.getOrElse(i) { problemBounds[0] })
 				}
@@ -193,17 +194,24 @@ object RnnMazeEvolution {
 
 			mapping = { gen ->
 				val walls = arrayListOf(*arrayOf(
-						LineSegment(Vector2(0.0, 0.0), Vector2(0.0, 500.0)),
-						LineSegment(Vector2(0.0, 500.0), Vector2(500.0, 500.0)),
-						LineSegment(Vector2(0.0, 0.0), Vector2(500.0, 0.0)),
-						LineSegment(Vector2(500.0, 0.0), Vector2(500.0, 500.0))),
+						LineSegment(Vector2(0.0, 0.0), Vector2(0.0, mazeSize)),
+						LineSegment(Vector2(0.0, mazeSize), Vector2(mazeSize, mazeSize)),
+						LineSegment(Vector2(0.0, 0.0), Vector2(mazeSize, 0.0)),
+						LineSegment(Vector2(mazeSize, 0.0), Vector2(mazeSize, mazeSize))),
 						*gen
 						.drop(6) // ignore the first 5 entries
 						.mapIndexed { i: Int, d: Double -> i to d } // attach an index to each
-						.groupBy { it.first / 4 } // group them by 4
-						.map { // map each 4 points to a wall
-							val points = it.value.map { it.second }
-							LineSegment(Vector2(points[0], points[1]), Vector2(points[2], points[3]))
+						.groupBy { it.first / 3 } // group them by 3
+						.map { // map each 3 elements to a line
+							val values = it.value.map { it.second }
+							val center = Vector2(gen[2], gen[3])
+							center.addMultiple(Vector2(gen[4]- gen[2], gen[5]- gen[3]), values[0])
+							val dir = Vector2(1.0, 0.0)
+							dir.rotate((values[1]*360).deg)
+							val start = center.addMultipleCopy(dir, values[2]*mazeSize/2)
+							dir.negate()
+							val end = center.addMultipleCopy(dir, values[2]*mazeSize/2)
+							LineSegment(start as Vector2, end as Vector2)
 						}.toTypedArray())
 				Maze(walls, start = Vector2(gen[2], gen[3]), goal = Vector2(gen[4], gen[5]), orientation = gen[1])
 			}
@@ -211,7 +219,9 @@ object RnnMazeEvolution {
 			refine = {
 				el, n ->
 				synchronized(SortLock.lock) {
-					selectors.problemRemoval(el.toList()).take(n)
+					val sorted = selectors.problemRemoval(el).reversed()
+					val unlucky = sorted.linearSelection(1.5, random)
+					sorted.filter { it != unlucky }
 				}
 			}
 
@@ -221,7 +231,7 @@ object RnnMazeEvolution {
 			}
 
 			reproduce = { mother, father ->
-				crossOverMutation(mother, father, cRate = 1.0, mRate = 2.0, sRate = 0.4, change = 10.0, bounds = problemBounds)
+				crossOverMutation(mother, father, cRate = 1.0, mRate = 0.05, sRate = 0.4, change = 0.05, bounds = problemBounds)
 			}
 
 			behaviour = {
@@ -231,7 +241,7 @@ object RnnMazeEvolution {
 				store = {
 					e, o, b ->
 					val ne: MutableList<Double> = arrayListOf(*e.toTypedArray(), b)
-					ne.takeLast(2*historySize) as MutableList<Double>
+					ne.takeLast(historySize) as MutableList<Double>
 				}
 
 			}
@@ -254,7 +264,7 @@ object RnnMazeEvolution {
 						(1..historySize).map { s to sortedProblems.linearSelection(1.5, random) }
 					} + evolutionState.problems.filter { it.behaviour!!.size == 0 }.flatMap {
 						p ->
-						(1..2*historySize).map { sortedSolutions.linearSelection(1.5, random) to p }
+						(1..historySize).map { sortedSolutions.linearSelection(1.5, random) to p }
 					} + (1..testRuns).map {
 						sortedSolutions.linearSelection(1.5, random) to sortedProblems.linearSelection(1.5, random)
 					}
@@ -263,26 +273,33 @@ object RnnMazeEvolution {
 
 			evaluate = {
 				controller, maze ->
-				val robot = Robot(maze.start.clone(), maze.orientation.deg, 5.0)
+				val robot = Robot(maze.start.clone(), maze.orientation.deg, 0.01* mazeSize)
 				val actualControl = controller.copy()
 				actualControl.start()
 				var state = MazeNavigationState(robot = robot, maze = maze, controller = actualControl)
 				var travelledDistance = 0.0
 				var reachedGoal = false
-				for (i in 1..3000) {
+				var iterationsNeeded = 500
+				var goalPoints = 0
+				for (i in 1..500) {
 					val before = state.robot.pos.clone()
 					state = MazeNavigation.step(state, setting)
-					travelledDistance += before distanceTo state.robot.pos
-					if (maze.goal distanceTo state.robot.pos < robot.radius) {
+					if (!reachedGoal) {
+						travelledDistance += before distanceTo state.robot.pos
+					}
+					if (!reachedGoal && maze.goal distanceTo state.robot.pos < robot.radius) {
 						reachedGoal = true
-						break
+						iterationsNeeded = i
+					} else if (reachedGoal && maze.goal distanceTo state.robot.pos < robot.radius) {
+						goalPoints += 1
 					}
 				}
-				val s = if (reachedGoal) 1.0 else 0.0
-				val p = if (reachedGoal) travelledDistance else 100000.0
+				var distanceToGoal = maze.start distanceTo maze.goal
+				if (distanceToGoal == 0.0) distanceToGoal = 1.0
+				val s = if (travelledDistance == 0.0) 2000.0 else if (reachedGoal) (travelledDistance + iterationsNeeded)/distanceToGoal - goalPoints else (state.robot.pos distanceTo maze.goal) + 3*iterationsNeeded
 				assert(s != Double.POSITIVE_INFINITY && s != Double.NEGATIVE_INFINITY)
 				/* Positive feedback for the solution, negative feedback for the problem. */
-				s to p
+				-s to s
 			}
 
 		}

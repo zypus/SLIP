@@ -12,6 +12,7 @@ import com.zypus.Maze.models.MazeNavigationState
 import com.zypus.Maze.models.Robot
 import com.zypus.SLIP.algorithms.genetic.Entity
 import com.zypus.SLIP.algorithms.genetic.EvolutionState
+import com.zypus.SLIP.algorithms.genetic.linearSelection
 import com.zypus.SLIP.controllers.StatisticDelegate
 import com.zypus.SLIP.models.Statistic
 import com.zypus.utilities.LineSegment
@@ -24,6 +25,7 @@ import javafx.scene.control.ButtonType
 import mikera.vectorz.Vector2
 import tornadofx.*
 import java.io.File
+import java.util.*
 
 /**
  * TODO Add description
@@ -90,7 +92,7 @@ class SimpleMazeView : View() {
 					val x = it - mean
 					x * x
 				} / (evolver.solutions.size - 1)
-				print("\r%3.1f%% mean score: %.1f var: %.1f".format(100 * it, score, variance))
+				print("\r%3.1f%% mean score: %.2f var: %.4f".format(100 * it, score, variance))
 			}
 		}
 
@@ -117,7 +119,7 @@ class SimpleMazeView : View() {
 
 			runAsync {
 				if (computeOrLoad!!) {
-					val winner = evolver.evolve(200, 200, 5000, object : StatisticDelegate<List<Double>, ARobotController, Double, MutableList<Double>, List<Double>, Maze, Double, MutableList<Double>> {
+					val winner = evolver.evolve(50, 50, 5000, object : StatisticDelegate<List<Double>, ARobotController, Double, MutableList<Double>, List<Double>, Maze, Double, MutableList<Double>> {
 						override fun initialize(solutionCount: Int, problemCount: Int): Statistic {
 							return Statistic("cycle", "score")
 						}
@@ -130,7 +132,7 @@ class SimpleMazeView : View() {
 									row["score"] = it.behaviour!!.sum()
 								}
 								val currentBestController = solutionSort(state.solutions).first().phenotype.copy()
-								val currentBestMaze = problemSort(state.problems).first().phenotype
+								val currentBestMaze = problemSort(state.problems).linearSelection(1.5, Random()).phenotype
 
 								Platform.runLater {
 									debug.drawMatchup(debug.canvas.graphicsContext2D, currentBestMaze, currentBestController)

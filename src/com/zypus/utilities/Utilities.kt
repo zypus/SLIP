@@ -42,7 +42,7 @@ inline fun String.pickRandom(count: Int = 1, crossinline random: () -> Double): 
 }
 
 inline fun <T, R> List<T>.mapParallel(crossinline function: (T) -> R): List<R> {
-	val processors = min(Runtime.getRuntime().availableProcessors(), this.size)
+	val processors = min(Runtime.getRuntime().availableProcessors(), 4)
 	val subtaskSize = this.size / processors
 	val results = Array(processors) {
 		listOf<R>()
