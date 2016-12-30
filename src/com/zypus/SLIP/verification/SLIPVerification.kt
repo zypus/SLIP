@@ -2,7 +2,7 @@ package com.zypus.SLIP.verification
 
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
-import com.zypus.utilities.Vector2
+import mikera.vectorz.Vector2
 import java.io.File
 
 /**
@@ -28,7 +28,7 @@ fun main(args: Array<String>) {
 		for (t in arrayOf("uncontrolled", "controlled")) {
 			for (k in 1.rangeTo(kSteps).map { it.toDouble() / kSteps * 20 }) {
 				for (a in 0.rangeTo(aSteps).map { it.toDouble() / aSteps * Math.PI - Math.PI / 2 }) {
-					val slip = SLIP(position = Vector2(0, 200), velocity = Vector2(30, 0), angle = a, springConstant = k, controller = if (t == "uncontrolled") SpringController ({ a}) else control)
+					val slip = SLIP(position = Vector2(0.0, 200.0), velocity = Vector2(30.0, 0.0), angle = a, springConstant = k, controller = if (t == "uncontrolled") SpringController ({ a}) else control)
 					var state = SimulationState(slip, environment)
 					// initialize new statistic recording
 					val row = statistic.newRow().apply {
@@ -61,7 +61,7 @@ fun main(args: Array<String>) {
 		for ((k, v) in controller) {
 			for (y in 0.rangeTo(heightSteps).map { it.toDouble() / heightSteps * 200 + 110 }) {
 				for (vx in 0.rangeTo(velocitySteps).map { it.toDouble() / velocitySteps * velocityStepSize }) {
-					val slip = SLIP(position = Vector2(0, y), velocity = Vector2(vx, 0), controller = v)
+					val slip = SLIP(position = Vector2(0.0, y), velocity = Vector2(vx, 0.0), controller = v)
 					var state = SimulationState(slip, environment)
 					// initialize new statistic recording
 					val row = statistic.newRow().apply {

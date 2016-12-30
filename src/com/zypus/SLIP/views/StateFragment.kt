@@ -3,12 +3,8 @@ package com.zypus.SLIP.views
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.SimulationSetting
 import com.zypus.SLIP.models.SimulationState
-import com.zypus.SLIP.models.terrain.CompositeTerrain
-import com.zypus.SLIP.models.terrain.FlatTerrain
-import com.zypus.SLIP.models.terrain.SinusTerrain
-import com.zypus.SLIP.models.terrain.Terrain
+import com.zypus.SLIP.models.terrain.MidpointTerrain
 import com.zypus.gui.ResizableCanvas
-import javafx.collections.ObservableList
 import javafx.event.ActionEvent
 import javafx.geometry.Insets
 import javafx.geometry.Pos
@@ -37,13 +33,18 @@ class StateFragment(var state: SimulationState, setting: SimulationSetting) : Fr
 	var play by property(false)
 	fun playProperty() = getProperty(StateFragment::play)
 
+	var terrain by property(state.environment.terrain)
+	fun terrainProperty() = getProperty(StateFragment::terrain)
+
 	fun Node.actionEvents() = EventStreams.eventsOf(this, ActionEvent.ACTION)
 
 	init {
 		val gc = canvas.graphicsContext2D
 		var s = state
+		var steps = 0
 		gc.drawSimulationState(s)
 		with(root) {
+
 			alignment = Pos.CENTER
 			padding = Insets(10.0)
 			spacing = 10.0
@@ -61,6 +62,7 @@ class StateFragment(var state: SimulationState, setting: SimulationSetting) : Fr
 				button("Reset") {
 					setOnAction {
 						play = false
+						steps = 0
 						s = state
 						gc.drawSimulationState(s)
 					}
@@ -70,19 +72,16 @@ class StateFragment(var state: SimulationState, setting: SimulationSetting) : Fr
 			/* MARK: Canvas */
 			val borderedCanvas = Borders.wrap(canvas).lineBorder().color(Color.BLACK).innerPadding(0.0).buildAll()
 			EventStreams.valuesOf(borderedCanvas.boundsInLocalProperty()).feedTo {
-				canvas.resize(root.width-20, canvas.height)
+				canvas.resize(root.width - 20, canvas.height)
 				gc.drawSimulationState(s)
 			}
 			add(borderedCanvas)
 
 			/* MARK: Terrain */
 
-			val terrain: ObservableList<Terrain> = arrayListOf<Terrain>(FlatTerrain(30.0)).observable()
-
-			EventStreams.changesOf(terrain).feedTo {
-				val compositeTerrain = CompositeTerrain(*terrain.toTypedArray())
-				s = s.copy(environment = s.environment.copy(terrain = compositeTerrain))
-				state = state.copy(environment = state.environment.copy(terrain = compositeTerrain))
+			EventStreams.valuesOf(terrainProperty()).feedTo {
+				s = s.copy(environment = s.environment.copy(terrain = it))
+				state = state.copy(environment = state.environment.copy(terrain = it))
 				gc.drawSimulationState(s)
 			}
 
@@ -92,77 +91,47 @@ class StateFragment(var state: SimulationState, setting: SimulationSetting) : Fr
 					alignment = Pos.CENTER_LEFT
 					spacing = 10.0
 					label("Height")
-					val h = textfield { text = "30.0" }
-					h.actionEvents().feedTo {
-						val i = parent.childrenUnmodifiable.indexOf(this)
+					val height = textfield { text = "${(terrain as? MidpointTerrain)?.height ?: 0.0}" }
+					label("Roughness")
+					val roughness = textfield { text = "${(terrain as? MidpointTerrain)?.roughness ?: 0.0}" }
+					label("Displace")
+					val displace = textfield { text = "${(terrain as? MidpointTerrain)?.displace ?: 0.0}" }
+					label("Resolution")
+					val resolution = textfield { text = "${(terrain as? MidpointTerrain)?.exp ?: 0.0}" }
+					label("Seed")
+					val seed = textfield { text = "${(terrain as? MidpointTerrain)?.seed ?: 0.0}" }
+
+					EventStreams.merge(height.actionEvents(), roughness.actionEvents(), displace.actionEvents(), resolution.actionEvents(), seed.actionEvents()).feedTo {
 						try {
-							val height = h.text.toDouble()
-							terrain[i] = FlatTerrain(height)
+							val h = height.text.toDouble()
+							val r = roughness.text.toDouble()
+							val d = displace.text.toDouble()
+							val res = resolution.text.toDouble()
+							val ss = seed.text.toDouble()
+							terrain = MidpointTerrain(height = h, roughness = r, displace = d, exp = res.toInt(), seed = ss.toLong())
 						}
 						catch(e: NumberFormatException) {
 						}
 					}
 				}
 			}
-			val add = button("Add") {
-				setOnAction {
-					terrain.add(SinusTerrain(frequency = 0.1, shift = 0.0, amplitude = 10.0))
-					sinus.apply {
-						hbox {
-							alignment = Pos.CENTER
-							spacing = 10.0
-							label("Frequency")
-							val freq = textfield { text = "0.1" }
-							label("Shift")
-							val shift = textfield { text = "0.0" }
-							label("Amplitude")
-							val amp = textfield { text = "10.0" }
 
-							button("Remove") {
-								setOnAction {
-									val container = parent.parent
-									val i = container.childrenUnmodifiable.indexOf(parent)
-									terrain.removeAt(i)
-									(container as VBox).children.removeAt(i)
-								}
-							}
-
-							EventStreams.merge(freq.actionEvents(), shift.actionEvents(), amp.actionEvents()).feedTo {
-								val i = parent.childrenUnmodifiable.indexOf(this)
-								try {
-									val f = freq.text.toDouble()
-									val sh = shift.text.toDouble()
-									val a = amp.text.toDouble()
-									terrain[i] = SinusTerrain(frequency = f, shift = sh, amplitude = a)
-								}
-								catch(e: NumberFormatException) {
-								}
-							}
+			var subscription: Subscription? = null
+			subscription = EventStreams.animationFrames().filter { play }
+					.feedTo {
+						if (steps < 1000) {
+							if (!root.scene.window.isShowing) subscription?.unsubscribe()
+							s = SimulationController.step(s, setting)
+							gc.drawSimulationState(s)
+							steps++
 						}
 					}
-				}
-			}
-			add.fire()
 		}
-
-		var steps = 0
-
-		var subscription: Subscription? = null
-		subscription = EventStreams.animationFrames().filter { play }
-				.feedTo {
-					if (steps < 1000 ) {
-						if (!root.scene.window.isShowing) subscription?.unsubscribe()
-						s = SimulationController.step(s, setting)
-						gc.drawSimulationState(s)
-					}
-					steps++
-				}
 	}
 
 	fun changeState(s: SimulationState) {
 		state = s
 	}
-
 
 
 }

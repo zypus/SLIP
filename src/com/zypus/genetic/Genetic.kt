@@ -15,6 +15,29 @@ data class EvolutionState<SG : Any, SP : Any, SB : Any, SBC: Any, PG : Any, PP :
 
 data class Entity<G : Any, P : Any, B: Any, BC: Any>(val genotype: G, var behaviour: BC? = null, val phenoMapping: (G) -> P) {
 	val phenotype by lazy { phenoMapping(genotype) }
+
+	val id = Entity.nextId
+
+	override fun hashCode(): Int {
+		return id
+	}
+
+	override fun equals(other: Any?): Boolean {
+		return if (other == null) {
+			false
+		} else {
+			other.hashCode() == hashCode()
+		}
+	}
+
+	companion object {
+		private var _nextId = 0
+		val nextId: Int
+		get() {
+			_nextId++
+			return _nextId
+		}
+	}
 }
 
 data class Selection<G : Any, P : Any, B : Any, BC: Any>(val childCount: Int, val parents: List<Pair<Entity<G, P, B, BC>, Entity<G, P, B, BC>>>, val toBeRemoved: List<Entity<G, P, B, BC>> = arrayListOf(), val toBeReplaced: List<Entity<G, P, B, BC>> = arrayListOf())

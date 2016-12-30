@@ -1,5 +1,6 @@
 package com.zypus.utilities
 
+import mikera.vectorz.Vector2
 import java.lang.Math.max
 import java.lang.Math.min
 
@@ -14,22 +15,52 @@ import java.lang.Math.min
 data class Line(val from: Vector2, val to: Vector2)
 
 infix fun Line.intersect(other: Line): Vector2? {
-	val divisor = (from.x - to.x) * (other.from.y-other.to.y) - (from.y - to.y) * (other.from.y - other.to.y)
+	val (x1, y1) = from
+	val (x2, y2) = to
+	val (x3, y3) = other.from
+	val (x4, y4) = other.to
+	val divisor = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
 	if (divisor != 0.0) {
-		val px = (from.x*to.y - from.y*to.x) * (other.from.x - other.to.x) - (from.x -to.x) * (other.from.x * other.to.y - other.from.y * other.to.x)
-		val py = (from.x * to.y - from.y * to.x) * (other.from.y - other.to.y) - (from.y - to.y) * (other.from.x * other.to.y - other.from.y * other.to.x)
-		return Vector2(px/divisor, py/divisor)
-	} else {
+		val px = (x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)
+		val py = (x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)
+		return Vector2(px / divisor, py / divisor)
+	}
+	else {
 		return null
 	}
 }
 
 data class LineSegment(val from: Vector2, val to: Vector2)
 
+val epsilon = 1E-4
+
 infix fun LineSegment.intersect(other: LineSegment): Vector2? {
 	val intersection = Line(from, to) intersect Line(other.from, other.to)
+	intersection?.let {
+		if (
+				it.x >= min(from.x, to.x) - epsilon &&
+				it.x <= max(from.x, to.x) + epsilon &&
+				it.y >= min(from.y, to.y) - epsilon &&
+				it.y <= max(from.y, to.y) + epsilon &&
+				it.x >= min(other.from.x, other.to.x) - epsilon &&
+				it.x <= max(other.from.x, other.to.x) + epsilon &&
+				it.y >= min(other.from.y, other.to.y) - epsilon &&
+				it.y <= max(other.from.y, other.to.y) + epsilon
+		) {
+			return it
+		}
+	}
+	return null
+}
+
+infix fun LineSegment.intersect(other: Line): Vector2? {
+	val intersection = Line(from, to) intersect other
 	if (intersection != null) {
-		if (intersection.x >= min(from.x, to.x) && intersection.x <= max(from.x, to.x)) {
+		if (
+				intersection.x >= min(from.x, to.x) - epsilon &&
+				intersection.x <= max(from.x, to.x) + epsilon &&
+				intersection.y >= min(from.y, to.y) - epsilon &&
+				intersection.y <= max(from.y, to.y) + epsilon ) {
 			return intersection
 		}
 	}

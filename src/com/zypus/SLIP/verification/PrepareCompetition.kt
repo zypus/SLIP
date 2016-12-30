@@ -20,15 +20,15 @@ fun main(args: Array<String>) {
 //		val lines = File("results/$filename.solutions.txt").reader().readLines() as MutableList
 //		val linesCopy = arrayListOf<String>()
 //		linesCopy.addAll(lines)
-//		val controllers: MutableList<SpringController> = arrayListOf()
+//		val simulation: MutableList<SpringController> = arrayListOf()
 //		while (!lines.isEmpty()) {
 //			val controller = ControllerSerializer.deserialize(lines)
 //			if (controller != null) {
-//				controllers.add(controller)
+//				simulation.add(controller)
 //			}
 //		}
 //
-//		val benchmark = controllers.mapParallel { Benchmark.benchmark(it) }
+//		val benchmark = simulation.mapParallel { Benchmark.benchmark(it) }
 //
 //		val writer = File("results/$filename.solutions.sorted.txt").printWriter()
 //		benchmark.zip(linesCopy).sortedBy {

@@ -1,10 +1,11 @@
 package com.zypus.SLIP.verification.benchmark
 
+import com.zypus.SLIP.algorithms.SLIPTerrainEvolution
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
 import com.zypus.SLIP.models.terrain.MidpointTerrain
 import com.zypus.SLIP.models.terrain.Terrain
-import com.zypus.utilities.Vector2
+import mikera.vectorz.Vector2
 import java.io.File
 
 /**
@@ -61,7 +62,7 @@ object Benchmark {
 		}, sum = {
 			f,s -> f+s
 		}, eval = {
-			state, off ->
+			state, jumps, off ->
 			if (state.slip.crashed) 0.0 else 1.0
 		})
 	}
@@ -72,7 +73,7 @@ object Benchmark {
 		}, sum = {
 			f,s -> f+s
 		}, eval = {
-			state, off ->
+			state, jumps, off ->
 			if (state.slip.crashed) 0.0 else 1.0
 		})
 	}
@@ -83,63 +84,90 @@ object Benchmark {
 		}, sum = {
 			f,s -> f+s
 		}, eval = {
-			state, off ->
+			state, jumps, off ->
 			if (state.slip.crashed) 0.0 else 1.0
 		})
 	}
 
-	fun <T> evaluate(springController: SpringController, terrains: List<Terrain>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Double)->T): T {
+	fun <T> evaluate(springController: SpringController, terrains: List<Terrain>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Int,Double)->T): T {
 		return terrains.fold(initial) {
 			value, terrain ->
 			val environment = Environment(terrain = terrain)
 			val next = average((-10..10 step 10).fold(initial) {
 				s, offset ->
-				val start = Initial(Vector2(offset, 200))
+				val start = Initial(Vector2(offset.toDouble(), 200.0))
 				val slip = SLIP(start).copy(controller = springController)
 				var state = SimulationState(slip, environment)
-				for (i in 1..1000) {
-					state = SimulationController.step(state, setting)
+//				for (i in 1..1000) {
+//					state = SimulationController.step(state, setting)
+//					if (state.slip.crashed) break
+//				}
+				var jumps = 0
+				var stepCount = 0
+				while (jumps < 50 && stepCount < 5000) {
+					val before = state.slip.grounded
+					state = SimulationController.step(state, SLIPTerrainEvolution.setting)
+					if (before == true && state.slip.grounded == false) jumps++
 					if (state.slip.crashed) break
+					stepCount++
 				}
-				sum (eval(state,offset.toDouble()), s)
+				sum (eval(state,jumps,offset.toDouble()), s)
 			}, 3)
 			sum(value,next)
 		}
 	}
 
-	fun <T> evaluate(slip: SLIP, terrains: List<Terrain>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Double)->T): T  {
+	fun <T> evaluate(slip: SLIP, terrains: List<Terrain>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Int,Double)->T): T  {
 		return terrains.fold(initial) {
 			value, terrain ->
 			val environment = Environment(terrain = terrain)
 			val next = average((-10..10 step 10).fold(initial) {
 				s, offset ->
-				val start = Initial(Vector2(offset, 200))
+				val start = Initial(Vector2(offset.toDouble(), 200.0))
 				val sl = slip.copy(position = start.position, velocity = start.velocity)
 				var state = SimulationState(sl, environment)
-				for (i in 1..1000) {
-					state = SimulationController.step(state, setting)
+//				for (i in 1..1000) {
+//					state = SimulationController.step(state, setting)
+//					if (state.slip.crashed) break
+//				}
+				var jumps = 0
+				var stepCount = 0
+				while (jumps < 50 && stepCount < 5000) {
+					val before = state.slip.grounded
+					state = SimulationController.step(state, SLIPTerrainEvolution.setting)
+					if (before == true && state.slip.grounded == false) jumps++
 					if (state.slip.crashed) break
+					stepCount++
 				}
-				sum (eval(state,offset.toDouble()), s)
+				sum (eval(state,jumps,offset.toDouble()), s)
 			}, 3)
 			sum(value,next)
 		}
 	}
 
-	fun <T> evaluate(terrain: Terrain, controllers: List<SpringController>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Double)->T): T {
+	fun <T> evaluate(terrain: Terrain, controllers: List<SpringController>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Int,Double)->T): T {
 		val environment = Environment(terrain = terrain)
 		return controllers.fold(initial) {
 			value, controller ->
 			val next = average((-10..10 step 10).fold(initial) {
 				s, offset ->
-				val start = Initial(Vector2(offset, 200))
+				val start = Initial(Vector2(offset.toDouble(), 200.0))
 				val slip = SLIP(start).copy(controller = controller)
 				var state = SimulationState(slip, environment)
-				for (i in 1..1000) {
-					state = SimulationController.step(state, setting)
+//				for (i in 1..1000) {
+//					state = SimulationController.step(state, setting)
+//					if (state.slip.crashed) break
+//				}
+				var jumps = 0
+				var stepCount = 0
+				while (jumps < 50 && stepCount < 5000) {
+					val before = state.slip.grounded
+					state = SimulationController.step(state, SLIPTerrainEvolution.setting)
+					if (before == true && state.slip.grounded == false) jumps++
 					if (state.slip.crashed) break
+					stepCount++
 				}
-				sum (eval(state,offset.toDouble()), s)
+				sum (eval(state,jumps,offset.toDouble()), s)
 			}, 3)
 			sum(value,next)
 		}

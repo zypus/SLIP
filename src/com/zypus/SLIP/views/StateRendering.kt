@@ -20,28 +20,29 @@ import javafx.scene.text.Text
  *
  * @param state The current simulation state.
  */
-fun GraphicsContext.drawSimulationState(state: SimulationState) {
+fun GraphicsContext.drawSimulationState(state: SimulationState, markers: Boolean = true, tracking: Boolean = true, linesize: Double = 1.0) {
 	// Clear the context.
 	clearRect(0.0, 0.0, canvas.width, canvas.height)
 
 	// Extract the state information.
 	val (position, velocity, angle, restLength, length, springConstant, mass, radius, standPosition) = state.slip
-	val (x, y) = position
+	val (x, y) = position.elements
 	val (gravity, terrain) = state.environment
 
 	// Shift the viewport to be centered on the slip.
 	save()
 	scale(1.0, -1.0)
-	translate(canvas.width / 2 - x, -canvas.height)
+	val offset = if (tracking) x else 0.0
+	translate(canvas.width / 2 - offset, -canvas.height)
 
 	// Set line attributes.
-	lineWidth = 1.0
+	lineWidth = linesize
 	stroke = Color.BLACK
 
 	// Draw the terrain.
-	val start = x - canvas.width / 2
-	val end = x + canvas.width / 2
-	drawTerrain(start, end, 1000, terrain)
+	val start = offset - canvas.width / 2
+	val end = offset + canvas.width / 2
+	drawTerrain(start, end, 3000, terrain)
 
 	// Draw slip.
 	// Draw the mass.
@@ -54,7 +55,7 @@ fun GraphicsContext.drawSimulationState(state: SimulationState) {
 	restore()
 
 	// Draw markers.
-	drawMarkers(start, end, canvas.width / 2 - x, 50, 10, 6.0, 3.0)
+	if (markers) drawMarkers(start, end, canvas.width / 2 - offset, 50, 10, 6.0, 3.0)
 
 	// Draw Info.
 	drawStateInfo(state)

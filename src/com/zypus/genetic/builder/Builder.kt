@@ -58,7 +58,7 @@ class EvolverBuilder<G : Any, P : Any, B : Any, BC: Any, OG : Any, OP : Any, OB 
 	var select: (List<Entity<G, P, B, BC>>) -> Selection<G, P, B, BC>? = { null }
 	var refine: (List<Entity<G, P, B, BC>>, Int) -> List<Entity<G, P, B, BC>> = { el, n -> el }
 	var reproduce: (G, G) -> G = { m,f -> m }
-	lateinit var behaviour: BehaviourBuilder<G,P,B,BC,OG,OP,OB,OBC>.() -> Unit
+	var behaviour: BehaviourBuilder<G,P,B,BC,OG,OP,OB,OBC>.() -> Unit = {}
 
 	operator fun invoke(): Evolver<G, P, B, BC, OG, OP, OB, OBC> {
 

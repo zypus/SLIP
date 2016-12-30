@@ -3,7 +3,7 @@ package com.zypus.SLIP.algorithms
 import com.zypus.SLIP.controllers.SimulationController
 import com.zypus.SLIP.models.*
 import com.zypus.SLIP.models.terrain.SinusTerrain
-import com.zypus.utilities.Vector2
+import mikera.vectorz.Vector2
 
 /**
  * TODO Add description
@@ -16,7 +16,7 @@ import com.zypus.utilities.Vector2
 class HillClimber : SpringControllerProvider {
 
 	override fun createController(): SpringController {
-		val initial = Initial(position = Vector2(0, 210))
+		val initial = Initial(position = Vector2(0.0, 210.0))
 
 		val setting = SimulationSetting()
 		var factor1 = (Math.random() - 0.5) * 2 * 0.1

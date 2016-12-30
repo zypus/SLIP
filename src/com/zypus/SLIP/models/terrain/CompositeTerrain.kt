@@ -19,7 +19,8 @@ class CompositeTerrain(vararg val components: Terrain): Terrain {
 		return other is CompositeTerrain && other.components.size == components.size && hashCode() == other.hashCode()
 	}
 
-	override fun hashCode(): Int{
+	override fun hashCode(): Int {
 		return Arrays.hashCode(components)
 	}
+
 }

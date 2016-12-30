@@ -79,6 +79,11 @@ crashlytics.properties
 crashlytics-build.properties
 
 # Created by .ignore support plugin (hsz.mobi)
+.kobalt/build/
+.kobalt/buildInfo.json
+.kobalt/wrapperVersion.txt
+kobaltw
+kobaltw.bat
 
 kobalt-wrapper.properties
 versionCheckTimestamp.txt

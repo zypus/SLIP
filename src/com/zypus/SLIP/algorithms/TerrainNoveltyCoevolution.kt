@@ -11,7 +11,7 @@ import com.zypus.SLIP.models.terrain.CompositeTerrain
 import com.zypus.SLIP.models.terrain.FlatTerrain
 import com.zypus.SLIP.models.terrain.SinusTerrain
 import com.zypus.SLIP.models.terrain.Terrain
-import com.zypus.utilities.Vector2
+import mikera.vectorz.Vector2
 import java.lang.Math.PI
 import java.util.*
 
@@ -87,7 +87,7 @@ object TerrainNoveltyCoevolution {
 			fun Double.withNoise(): Double = this + random.nextGaussian() * noiseStrength
 
 			mapping = { gen -> SpringController ({ slip -> gen[0] * slip.velocity.x.withNoise() + gen[1] }, { slip -> gen[2] * (1.0 - (noiseStrength * slip.length.withNoise() / slip.restLength)) + gen[3] }) }
-			
+
 			select = { population ->
 				val rankedPopulation = population.sortedByDescending { it.behaviour!!.sum() }
 				Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5,random) to rankedPopulation.linearSelection(1.5,random)))
@@ -239,7 +239,7 @@ object TerrainNoveltyCoevolution {
 			evaluate = {
 				controller, environment ->
 				val ix = random.nextDouble() * 40.0 - 20.0
-				var state = SimulationState(SLIP(Initial(Vector2(ix, 200))).copy(controller = controller), environment)
+				var state = SimulationState(SLIP(Initial(Vector2(ix, 200.0))).copy(controller = controller), environment)
 				for (i in 1..2000) {
 					state = SimulationController.step(state, setting)
 					if (state.slip.crashed) break
