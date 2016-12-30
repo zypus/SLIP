@@ -28,11 +28,14 @@ object SLIPTerrainEvolution {
 	data class SLIPTerrainEvolutionSetting(val historySize: Int = 20,
 										   val testRuns: Int = 20,
 										   val noiseStrength: Double = 0.0,
-										   val adaptiveReproduction: Boolean = false,
+										   val adaptiveSolutionReproduction: Boolean = false,
+										   val adaptiveProblemReproduction: Boolean = false,
+										   val adaptiveSolutionThreshold: Int = 5000,
+										   val adaptiveProblemThreshold: Int = 3000,
 										   val seed: Long = 0L)
 
 	val initial = Initial()
-	val setting = SimulationSetting(simulationStep = 0.3)
+	val setting = SimulationSetting(simulationStep = 0.2)
 
 	fun rule(
 			selectors: Selectors,
@@ -107,7 +110,7 @@ object SLIPTerrainEvolution {
 					select = { population ->
 						val rankedPopulation = population.sortedByDescending(selectors.solutionSelection(population))
 						val fitness = rankedPopulation.first().behaviour!!.sum()
-						if (!settings.adaptiveReproduction || utilityRandom.nextDouble() < 1 - fitness / (settings.historySize * 5000)) {
+						if (!settings.adaptiveSolutionReproduction || utilityRandom.nextDouble() < 1 - fitness / (settings.historySize * settings.adaptiveSolutionThreshold)) {
 							Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5, slipRandom) to rankedPopulation.linearSelection(1.5, slipRandom)))
 						}
 						else {
@@ -176,7 +179,7 @@ object SLIPTerrainEvolution {
 							select = { population ->
 								val rankedPopulation = population.sortedByDescending(selectors.problemSelection(population))
 								val fitness = -rankedPopulation.first().behaviour!!.sum()
-								if (!settings.adaptiveReproduction || utilityRandom.nextDouble() < fitness / (settings.historySize * 3000)) {
+								if (!settings.adaptiveProblemReproduction || utilityRandom.nextDouble() < fitness / (settings.historySize * settings.adaptiveProblemThreshold)) {
 									Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5, terrainRandom) to rankedPopulation.linearSelection(1.5, terrainRandom)))
 								}
 								else {
@@ -242,11 +245,13 @@ object SLIPTerrainEvolution {
 						val ix = mainRandom.nextDouble() * 40.0 - 20.0
 						var state = SimulationState(slip.copy(position = initial.position.clone(), velocity = initial.velocity.clone()), environment.copy(terrain = (environment.terrain as MidpointTerrain).copy()))
 						var jumps = 0
-						while (jumps < 50) {
+						var stepCount = 0
+						while (jumps < 50 && stepCount < 5000) {
 							val before = state.slip.grounded
 							state = SimulationController.step(state, setting)
 							if (before == true && state.slip.grounded == false) jumps++
 							if (state.slip.crashed) break
+							stepCount++
 						}
 						val x = state.slip.position.x - ix
 						/* Positive feedback for the solution, negative feedback for the problem. */

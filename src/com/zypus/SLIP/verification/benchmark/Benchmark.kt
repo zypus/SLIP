@@ -62,7 +62,7 @@ object Benchmark {
 		}, sum = {
 			f,s -> f+s
 		}, eval = {
-			state, off ->
+			state, jumps, off ->
 			if (state.slip.crashed) 0.0 else 1.0
 		})
 	}
@@ -73,7 +73,7 @@ object Benchmark {
 		}, sum = {
 			f,s -> f+s
 		}, eval = {
-			state, off ->
+			state, jumps, off ->
 			if (state.slip.crashed) 0.0 else 1.0
 		})
 	}
@@ -84,12 +84,12 @@ object Benchmark {
 		}, sum = {
 			f,s -> f+s
 		}, eval = {
-			state, off ->
+			state, jumps, off ->
 			if (state.slip.crashed) 0.0 else 1.0
 		})
 	}
 
-	fun <T> evaluate(springController: SpringController, terrains: List<Terrain>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Double)->T): T {
+	fun <T> evaluate(springController: SpringController, terrains: List<Terrain>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Int,Double)->T): T {
 		return terrains.fold(initial) {
 			value, terrain ->
 			val environment = Environment(terrain = terrain)
@@ -103,19 +103,21 @@ object Benchmark {
 //					if (state.slip.crashed) break
 //				}
 				var jumps = 0
-				while (jumps < 50) {
+				var stepCount = 0
+				while (jumps < 50 && stepCount < 5000) {
 					val before = state.slip.grounded
 					state = SimulationController.step(state, SLIPTerrainEvolution.setting)
 					if (before == true && state.slip.grounded == false) jumps++
 					if (state.slip.crashed) break
+					stepCount++
 				}
-				sum (eval(state,offset.toDouble()), s)
+				sum (eval(state,jumps,offset.toDouble()), s)
 			}, 3)
 			sum(value,next)
 		}
 	}
 
-	fun <T> evaluate(slip: SLIP, terrains: List<Terrain>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Double)->T): T  {
+	fun <T> evaluate(slip: SLIP, terrains: List<Terrain>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Int,Double)->T): T  {
 		return terrains.fold(initial) {
 			value, terrain ->
 			val environment = Environment(terrain = terrain)
@@ -129,19 +131,21 @@ object Benchmark {
 //					if (state.slip.crashed) break
 //				}
 				var jumps = 0
-				while (jumps < 50) {
+				var stepCount = 0
+				while (jumps < 50 && stepCount < 5000) {
 					val before = state.slip.grounded
 					state = SimulationController.step(state, SLIPTerrainEvolution.setting)
 					if (before == true && state.slip.grounded == false) jumps++
 					if (state.slip.crashed) break
+					stepCount++
 				}
-				sum (eval(state,offset.toDouble()), s)
+				sum (eval(state,jumps,offset.toDouble()), s)
 			}, 3)
 			sum(value,next)
 		}
 	}
 
-	fun <T> evaluate(terrain: Terrain, controllers: List<SpringController>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Double)->T): T {
+	fun <T> evaluate(terrain: Terrain, controllers: List<SpringController>, initial: T, average: (T,Int) -> T, sum: (T,T)-> T, eval: (SimulationState,Int,Double)->T): T {
 		val environment = Environment(terrain = terrain)
 		return controllers.fold(initial) {
 			value, controller ->
@@ -155,13 +159,15 @@ object Benchmark {
 //					if (state.slip.crashed) break
 //				}
 				var jumps = 0
-				while (jumps < 50) {
+				var stepCount = 0
+				while (jumps < 50 && stepCount < 5000) {
 					val before = state.slip.grounded
 					state = SimulationController.step(state, SLIPTerrainEvolution.setting)
 					if (before == true && state.slip.grounded == false) jumps++
 					if (state.slip.crashed) break
+					stepCount++
 				}
-				sum (eval(state,offset.toDouble()), s)
+				sum (eval(state,jumps,offset.toDouble()), s)
 			}, 3)
 			sum(value,next)
 		}

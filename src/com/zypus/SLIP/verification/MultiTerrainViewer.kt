@@ -95,7 +95,7 @@ class MultiTerrainView : View() {
 				f, s ->
 				f + s
 			}, eval = {
-				state, off ->
+				state, jumps, off ->
 				if (state.slip.crashed) Vector2(0.0, state.slip.position.x) else Vector2(1.0, state.slip.position.x)
 			})
 			val dif = benchmark.y

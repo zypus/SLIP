@@ -13,7 +13,6 @@ import com.zypus.SLIP.models.terrain.MidpointTerrain
 import com.zypus.SLIP.verification.benchmark.Benchmark
 import com.zypus.SLIP.verification.benchmark.ControllerSerializer
 import com.zypus.SLIP.verification.benchmark.TerrainSerializer
-import com.zypus.utilities.Vector2
 import org.reactfx.EventStreams
 import java.io.File
 import kotlin.system.measureTimeMillis
@@ -46,11 +45,12 @@ fun main(args: Array<String>) {
 
 	val primes = arrayListOf(2L, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97)
 
-	var totalTime = 0L;
-	var passedRuns = 0;
-	val runs = 10;
+	var totalTime = 0L
+	var passedRuns = 0
+	val runs = 10
 	val noiseStrength = 0.0
 	val cycles = 8000
+	val benchmarksOn = 400
 
 	val times: MutableList<Long> = arrayListOf()
 
@@ -62,7 +62,7 @@ fun main(args: Array<String>) {
 	val fds = ::fitnessDiversitySelector
 
 //    val experimentsToRun = arrayListOf("terrain.diversity", "slip.diversity", "both.fitness", "both.fitness.adaptive", "both.diversity")
-	val experimentsToRun = arrayListOf("terrain.diversity", "both.fitness.adaptive")
+	val experimentsToRun = arrayListOf("terrain.diversity", "both.fitness.adaptive", "both.fitness.adaptive.terrains")
 	val experiments = experimentsToRun.flatMap {
 		primes.subList(0, runs).map { p ->
 			val settings = SLIPTerrainEvolution.SLIPTerrainEvolutionSetting(noiseStrength = noiseStrength, seed = p)
@@ -72,7 +72,8 @@ fun main(args: Array<String>) {
 				}
 				"slip.diversity"        -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fds, fs), settings)
 				"both.fitness"          -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fs, fs), settings)
-				"both.fitness.adaptive" -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fs, fs), settings.copy(adaptiveReproduction = true))
+				"both.fitness.adaptive" -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fs, fs), settings.copy(adaptiveSolutionReproduction = true, adaptiveProblemReproduction = true))
+				"both.fitness.adaptive.terrains" -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fs, fs), settings.copy(adaptiveProblemReproduction = true))
 				"both.diversity"        -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fds, fds), settings)
 				else                    -> throw IllegalAccessError()
 			}
@@ -105,6 +106,9 @@ fun main(args: Array<String>) {
 				lateinit var solutionStatistic: Statistic
 				lateinit var problemStatistic: Statistic
 
+				val solutionBenchmarkCache: MutableMap<Int, Triple<Double, Double, Long>> = hashMapOf()
+				val problemBenchmarkCache: MutableMap<Int, Triple<Double, Double, Long>> = hashMapOf()
+
 				override fun initialize(solutionCount: Int, problemCount: Int): Statistic {
 					val columns: MutableList<String> = arrayListOf("cycle", "id")
 					columns.add("fitness")
@@ -116,6 +120,7 @@ fun main(args: Array<String>) {
 					columns.add("m")
 					columns.add("stability benchmark")
 					columns.add("distance benchmark")
+					columns.add("benchmark mask")
 					solutionStatistic = Statistic(*columns.toTypedArray())
 
 					columns.clear()
@@ -131,6 +136,7 @@ fun main(args: Array<String>) {
 					columns.add("stability benchmark")
 					columns.add("distance benchmark")
 					columns.add("difficulty")
+					columns.add("benchmark mask")
 					problemStatistic = Statistic(*columns.toTypedArray())
 
 					return solutionStatistic
@@ -139,14 +145,16 @@ fun main(args: Array<String>) {
 				override fun update(stats: Statistic, generation: Int, state: EvolutionState<List<Double>, SLIP, Double, MutableList<Double>, List<Double>, Environment, Double, MutableList<Double>>) {
 
 
-					val solutionBenchmark = if (generation % 400 == 0) {
-						println("Benchmarking generation $generation ...")
+					val solutionBenchmark = if (generation % benchmarksOn == 0) {
+						print("Benchmarking generation $generation ...")
+						val removed = solutionBenchmarkCache.keys.toSet() - state.solutions.map { it.id }.toSet()
+						removed.forEach { solutionBenchmarkCache.remove(it) }
 						/* Benchmark solutions */
 						run {
 							val processors = Runtime.getRuntime().availableProcessors()
 							val subtaskSize = state.solutions.size / processors
 							val results = Array(processors) {
-								listOf<Vector2>()
+								listOf<Triple<Double, Double, Long>>()
 							}
 							(1..processors).map {
 								val subtask = if (it == processors) {
@@ -157,16 +165,21 @@ fun main(args: Array<String>) {
 								}
 								val task = Thread {
 									results[it - 1] = subtask.map { entity ->
-										Benchmark.evaluate(entity.phenotype, Benchmark.terrainBase, Vector2(0.0, 0.0), average = {
-											value, i ->
-											value / i
-										}, sum = {
-											f, s ->
-											f + s
-										}, eval = {
-											state, off ->
-											if (state.slip.crashed) Vector2(0.0, state.slip.position.x) else Vector2(1.0, state.slip.position.x)
-										})
+										solutionBenchmarkCache.getOrPut(entity.id) {
+											Benchmark.evaluate(entity.phenotype, Benchmark.terrainBase, Triple(0.0, 0.0, 0L), average = {
+												value, i ->
+												Triple(value.first / i, value.second / i, 0L)
+//												value / i
+											}, sum = {
+												f, s ->
+												Triple(f.first + s.first, f.second + s.second, f.third.shl(1) + if (s.third > 0) 1 else 0)
+//												f + s
+											}, eval = {
+												state, jumps, off ->
+												Triple(jumps.toDouble() / 50, state.slip.position.x - off, if (state.slip.crashed) 0L else 1L)
+//												Vector2(jumps.toDouble()/50, state.slip.position.x - off)
+											})
+										}
 									}
 								}
 								task.start()
@@ -185,12 +198,14 @@ fun main(args: Array<String>) {
 						null
 					}
 					/* Benchmark problems */
-					val problemBenchmark = if (generation % 400 == 0) {
-						run {
+					val problemBenchmark = if (generation % benchmarksOn == 0) {
+						val removed = problemBenchmarkCache.keys.toSet() - state.problems.map { it.id }.toSet()
+						removed.forEach { problemBenchmarkCache.remove(it) }
+						val result = run {
 							val processors = Runtime.getRuntime().availableProcessors()
 							val subtaskSize = state.problems.size / processors
 							val results = Array(processors) {
-								listOf<Vector2>()
+								listOf<Triple<Double,Double,Long>>()
 							}
 							(1..processors).map {
 								val subtask = if (it == processors) {
@@ -201,16 +216,21 @@ fun main(args: Array<String>) {
 								}
 								val task = Thread {
 									results[it - 1] = subtask.map { entity ->
-										Benchmark.evaluate(entity.phenotype.terrain, Benchmark.controllerBase, Vector2(0.0, 0.0), average = {
-											value, i ->
-											value / i
-										}, sum = {
-											f, s ->
-											f + s
-										}, eval = {
-											state, off ->
-											if (state.slip.crashed) Vector2(0.0, state.slip.position.x) else Vector2(1.0, state.slip.position.x)
-										})
+										problemBenchmarkCache.getOrPut(entity.id) {
+											Benchmark.evaluate(entity.phenotype.terrain, Benchmark.controllerBase, Triple(0.0, 0.0, 0L), average = {
+												value, i ->
+												Triple(value.first/i, value.second/i, 0L)
+//												value / i
+											}, sum = {
+												f, s ->
+												Triple(f.first+s.first,f.second+s.second, f.third.shl(1) + if(s.third > 0) 1 else 0 )
+//												f + s
+											}, eval = {
+												state, jumps, off ->
+												Triple(jumps.toDouble() / 50, state.slip.position.x - off, if(state.slip.crashed) 0L else 1L)
+//												Vector2(jumps.toDouble()/50, state.slip.position.x - off)
+											})
+										}
 									}
 								}
 								task.start()
@@ -224,6 +244,8 @@ fun main(args: Array<String>) {
 							}
 							results.flatMap { it }
 						}
+						println(" Done")
+						result
 					}
 					else {
 						null
@@ -241,8 +263,9 @@ fun main(args: Array<String>) {
 						row["l"] = entity.genotype[4]
 						row["m"] = entity.genotype[5]
 						solutionBenchmark?.let {
-							row["stability benchmark"] = it[i].x
-							row["distance benchmark"] = it[i].y
+							row["stability benchmark"] = it[i].first
+							row["distance benchmark"] = it[i].second
+							row["benchmark mask"] = it[i].third
 						}
 					}
 					state.problems.forEachIndexed { i, entity ->
@@ -259,8 +282,9 @@ fun main(args: Array<String>) {
 						row["spikiness"] = TerrainDifficulty.spikiness(entity.phenotype.terrain)
 						row["ascension"] = TerrainDifficulty.ascension(entity.phenotype.terrain)
 						problemBenchmark?.let {
-							row["stability benchmark"] = it[i].x
-							row["distance benchmark"] = it[i].y
+							row["stability benchmark"] = it[i].first
+							row["distance benchmark"] = it[i].second
+							row["benchmark mask"] = it[i].third
 						}
 					}
 
