@@ -47,3 +47,28 @@ fun rungeKutta4(x: Vector4, f: List<(Vector4) -> Double>, h: Double): Vector4 {
 	return a
 
 }
+
+
+inline fun rungeKutta42(x: Vector4,  crossinline f0: (Vector4) -> Double, crossinline f1: (Vector4) -> Double, crossinline f2: (Vector4) -> Double, crossinline f3: (Vector4) -> Double, h: Double): Vector4 {
+
+	val a = Vector4(f0(x), f1(x), f2(x), f3(x))
+	val xx = x.addMultipleCopy(a, 0.5 * h) as Vector4
+	val b = Vector4(f0(xx), f1(xx), f2(xx), f3(xx))
+	a.addMultiple(b, 2.0)
+	xx.set(x)
+	xx.addMultiple(b, 0.5 * h)
+	val c = b
+	c.setValues(f0(xx), f1(xx), f2(xx), f3(xx))
+	a.addMultiple(c, 2.0)
+	xx.set(x)
+	xx.addMultiple(c, h)
+	val d = c
+	d.setValues(f0(xx), f1(xx), f2(xx), f3(xx))
+
+	a.add(d)
+	a.multiply(h / 6)
+	a.add(x)
+
+	return a
+
+}
