@@ -83,16 +83,18 @@ fun main(args: Array<String>) {
 	var r = 0
 
 	for ((filename, rule) in experiments) {
-		val solutionWriter = File("results/$expName/$filename.solution.txt").printWriter()
-		val problemWriter = File("results/$expName/$filename.problems.txt").printWriter()
+		val solutionWriter = File("results/$expName/$filename.solution.$r.txt").printWriter()
+		val problemWriter = File("results/$expName/$filename.problems.$r.txt").printWriter()
 		val evolution = GenericSpringEvolution(initial, environment, setting, rule, { if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum() }) {
 			if (it.isEmpty()) Double.NEGATIVE_INFINITY else it.sum()
 		}
 		EventStreams.valuesOf(evolution.progressProperty()).feedTo {
 			if (it % 0.1 == 0.0) println("%03.1f%%".format(it * 100))
 			if (it == 1.0) {
+				print("Writing results ...")
 				evolution.solutionsProperty().get().forEach { ControllerSerializer.serialize(solutionWriter, it.genotype as List<Double>) }
 				evolution.problemsProperty().get().forEach { TerrainSerializer.serialize(problemWriter, (it.phenotype as Environment).terrain) }
+				println(" Done")
 			}
 		}
 
@@ -308,7 +310,9 @@ fun main(args: Array<String>) {
 
 		solutionWriter.flush()
 		problemWriter.flush()
-
+		solutionWriter.close()
+		problemWriter.close()
 	}
 	println("Total time taken ${(totalTime / 60000).toInt()}m")
+
 }
