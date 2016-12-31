@@ -16,14 +16,14 @@ data class EvolutionState<SG : Any, SP : Any, SB : Any, SBC: Any, PG : Any, PP :
 data class Entity<G : Any, P : Any, B: Any, BC: Any>(val genotype: G, var behaviour: BC? = null, val phenoMapping: (G) -> P) {
 	val phenotype by lazy { phenoMapping(genotype) }
 
-	val id = Entity.nextId
+	val id = Entity.nextId(this.javaClass)
 
 	override fun hashCode(): Int {
 		return id
 	}
 
 	override fun equals(other: Any?): Boolean {
-		return if (other == null) {
+		return if (other == null || this.javaClass != other.javaClass ) {
 			false
 		} else {
 			other.hashCode() == hashCode()
@@ -31,11 +31,17 @@ data class Entity<G : Any, P : Any, B: Any, BC: Any>(val genotype: G, var behavi
 	}
 
 	companion object {
-		private var _nextId = 0
-		val nextId: Int
-		get() {
-			_nextId++
-			return _nextId
+
+		private val nextIds: MutableMap<Class<Entity<*,*,*,*>>, Int> = hashMapOf()
+
+		fun resetIds() {
+			nextIds.clear()
+		}
+
+		fun nextId(clazz: Class<Entity<*,*,*,*>>): Int {
+			val nextId = nextIds.getOrPut(clazz, {0})
+			nextIds[clazz] = nextId+1
+			return nextId
 		}
 	}
 }
@@ -66,6 +72,7 @@ class EvolutionRules<SG : Any, SP : Any, SB : Any, SBC : Any, PG : Any, PP : Any
 	fun initialize(solutionSize: Int, problemSize: Int): EvolutionState<SG, SP, SB, SBC, PG, PP, PB, PBC> {
 		solutionPopulationSize = solutionSize
 		problemPopulationSize = problemSize
+		Entity.resetIds()
 		return EvolutionState(
 				(1..solutionSize).map { Entity<SG,SP,SB, SBC>(genotype = solutionEvolver.initialize(), behaviour = solutionEvolver.initializeBehaviour() ,phenoMapping = { solutionEvolver.phenotypeMapping(it) }) },
 				(1..problemSize).map { Entity<PG,PP,PB, PBC>(genotype = problemEvolver.initialize(), behaviour = problemEvolver.initializeBehaviour(),phenoMapping = { problemEvolver.phenotypeMapping(it) }) }
