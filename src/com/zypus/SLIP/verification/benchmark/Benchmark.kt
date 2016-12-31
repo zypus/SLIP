@@ -111,7 +111,7 @@ object Benchmark {
 					if (state.slip.crashed) break
 					stepCount++
 				}
-				sum (eval(state,jumps,offset.toDouble()), s)
+				sum (s, eval(state,jumps,offset.toDouble()))
 			}, 3)
 			sum(value,next)
 		}
@@ -139,7 +139,7 @@ object Benchmark {
 					if (state.slip.crashed) break
 					stepCount++
 				}
-				sum (eval(state,jumps,offset.toDouble()), s)
+				sum (s, eval(state,jumps,offset.toDouble()))
 			}, 3)
 			sum(value,next)
 		}
@@ -167,7 +167,7 @@ object Benchmark {
 					if (state.slip.crashed) break
 					stepCount++
 				}
-				sum (eval(state,jumps,offset.toDouble()), s)
+				sum (s, eval(state,jumps,offset.toDouble()))
 			}, 3)
 			sum(value,next)
 		}
