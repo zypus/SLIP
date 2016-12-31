@@ -37,6 +37,14 @@ object SLIPTerrainEvolution {
 	val initial = Initial()
 	val setting = SimulationSetting(simulationStep = 0.2)
 
+	inline fun <T, R : kotlin.Comparable<R>> kotlin.collections.Iterable<T>.saveSortedByDescending(crossinline selector: (T) -> R?): kotlin.collections.List<T> {
+		return this.map { it to selector(it) }.sortedByDescending { it.second }.map { it.first }
+	}
+
+	inline fun <T, R : kotlin.Comparable<R>> kotlin.collections.Iterable<T>.saveSortedBy(crossinline selector: (T) -> R?): kotlin.collections.List<T> {
+		return this.map { it to selector(it) }.sortedBy { it.second }.map { it.first }
+	}
+
 	fun rule(
 			selectors: Selectors,
 			settings: SLIPTerrainEvolutionSetting) =
@@ -108,7 +116,7 @@ object SLIPTerrainEvolution {
 					}
 
 					select = { population ->
-						val rankedPopulation = population.sortedByDescending(selectors.solutionSelection(population))
+						val rankedPopulation = population.saveSortedByDescending(selectors.solutionSelection(population))
 						val fitness = rankedPopulation.first().behaviour!!.sum()
 						if (!settings.adaptiveSolutionReproduction || utilityRandom.nextDouble() < 1 - fitness / (settings.historySize * settings.adaptiveSolutionThreshold)) {
 							Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5, slipRandom) to rankedPopulation.linearSelection(1.5, slipRandom)))
@@ -121,7 +129,7 @@ object SLIPTerrainEvolution {
 					refine = {
 						el, n ->
 						synchronized(SortLock.lock) {
-							el.toList().sortedByDescending(selectors.solutionRemoval(el)).take(n)
+							el.toList().saveSortedByDescending(selectors.solutionRemoval(el)).take(n)
 						}
 					}
 
@@ -172,12 +180,12 @@ object SLIPTerrainEvolution {
 							refine = {
 								el, n ->
 								synchronized(SortLock.lock) {
-									el.toList().sortedByDescending(selectors.problemRemoval(el)).take(n)
+									el.toList().saveSortedByDescending(selectors.problemRemoval(el)).take(n)
 								}
 							}
 
 							select = { population ->
-								val rankedPopulation = population.sortedByDescending(selectors.problemSelection(population))
+								val rankedPopulation = population.saveSortedByDescending(selectors.problemSelection(population))
 								val fitness = -rankedPopulation.first().behaviour!!.sum()
 								if (!settings.adaptiveProblemReproduction || utilityRandom.nextDouble() < fitness / (settings.historySize * settings.adaptiveProblemThreshold)) {
 									Selection(1, arrayListOf(rankedPopulation.linearSelection(1.5, terrainRandom) to rankedPopulation.linearSelection(1.5, terrainRandom)))
@@ -211,8 +219,8 @@ object SLIPTerrainEvolution {
 					match = {
 						evolutionState ->
 						synchronized(SortLock.lock) {
-							val sortedSolutions = evolutionState.solutions.filter { it.behaviour!!.size != 0 }.sortedByDescending(selectors.solutionMatching(evolutionState.solutions))
-							val sortedProblems = evolutionState.problems.filter { it.behaviour!!.size != 0 }.sortedByDescending(selectors.problemMatching(evolutionState.problems))
+							val sortedSolutions = evolutionState.solutions.filter { it.behaviour!!.size != 0 }.saveSortedByDescending(selectors.solutionMatching(evolutionState.solutions))
+							val sortedProblems = evolutionState.problems.filter { it.behaviour!!.size != 0 }.saveSortedByDescending(selectors.problemMatching(evolutionState.problems))
 							evolutionState.solutions.filter { it.behaviour!!.size == 0 }.flatMap {
 								s ->
 								if (sortedProblems.isEmpty()) {

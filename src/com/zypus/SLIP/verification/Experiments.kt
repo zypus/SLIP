@@ -37,6 +37,10 @@ fun fitnessDiversitySelector(population: List<Entity<List<Double>, *, Double, Mu
 	}
 }
 
+fun randomSelector(population: List<Entity<List<Double>, *, Double, MutableList<Double>>>): (Entity<List<Double>, *, Double, MutableList<Double>>) -> Double {
+	return { Math.random() }
+}
+
 
 fun main(args: Array<String>) {
 	val initial = Coevolution.initial
@@ -55,32 +59,33 @@ fun main(args: Array<String>) {
 
 	val times: MutableList<Long> = arrayListOf()
 
-	val expName = "test4"
+	val expName = "test5"
 	File("benchedExperiments/$expName").mkdir()
 	File("results/$expName").mkdir()
 
 	val fs = ::fitnessSelector
 	val fds = ::fitnessDiversitySelector
 
+	val rs = ::randomSelector
+
 	val bfds = arrayListOf(1000,5000,10000)
 	var bfdCounter = -1
 
 //    val experimentsToRun = arrayListOf("terrain.diversity", "slip.diversity", "both.fitness", "both.fitness.adaptive", "both.diversity")
 	//val experimentsToRun = arrayListOf( "both.fitness.adaptive.terrains",  "both.fitness.adaptive.terrains", "both.fitness.adaptive.terrains")
-	val experimentsToRun = arrayListOf( "terrain.diversity",  "both.fitness.adaptive", "both.fitness.adaptive.terrains")
+	val experimentsToRun = arrayListOf( "terrain.random")
 	val experiments = experimentsToRun.flatMap {
 		bfdCounter++
 		primes.subList(0, runs).map { p ->
 			val settings = SLIPTerrainEvolution.SLIPTerrainEvolutionSetting(noiseStrength = noiseStrength, seed = p)
 			it to when (it) {
-				"terrain.diversity"     -> {
-					SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fs, fds), settings)
-				}
+				"terrain.diversity"     -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fs, fds), settings)
 				"slip.diversity"        -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fds, fs), settings)
 				"both.fitness"          -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fs, fs), settings)
 				"both.fitness.adaptive" -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fs, fs), settings.copy(adaptiveSolutionReproduction = true, adaptiveProblemReproduction = true, adaptiveProblemThreshold = 5000))
 				"both.fitness.adaptive.terrains" -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fs, fs), settings.copy(adaptiveProblemReproduction = true, adaptiveProblemThreshold = 5000))
 				"both.diversity"        -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fds, fds), settings)
+				"terrain.random"        -> SLIPTerrainEvolution.rule(SLIPTerrainEvolution.Selectors(fs, rs), settings)
 				else                    -> throw IllegalAccessError()
 			}
 		}
