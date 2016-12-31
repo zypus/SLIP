@@ -11,12 +11,12 @@ import com.zypus.utilities.pickRandom
  * @created 01/03/16
  */
 
-data class EvolutionState<SG : Any, SP : Any, SB : Any, SBC: Any, PG : Any, PP : Any, PB : Any, PBC: Any>(val solutions: List<Entity<SG, SP,SB, SBC>>, val problems: List<Entity<PG, PP,PB, PBC>>)
+data class EvolutionState<SG : Any, out SP : Any, SB : Any, SBC: Any, PG : Any, out PP : Any, PB : Any, PBC: Any>(val solutions: List<Entity<SG, SP,SB, SBC>>, val problems: List<Entity<PG, PP,PB, PBC>>)
 
-data class Entity<G : Any, P : Any, B: Any, BC: Any>(val genotype: G, var behaviour: BC? = null, val phenoMapping: (G) -> P) {
+data class Entity<G : Any, out P : Any, B: Any, BC: Any>(val genotype: G, var behaviour: BC? = null, val species: String, val phenoMapping: (G) -> P) {
 	val phenotype by lazy { phenoMapping(genotype) }
 
-	val id = Entity.nextId(this.javaClass)
+	val id = Entity.nextId(species)
 
 	override fun hashCode(): Int {
 		return id
@@ -32,15 +32,15 @@ data class Entity<G : Any, P : Any, B: Any, BC: Any>(val genotype: G, var behavi
 
 	companion object {
 
-		private val nextIds: MutableMap<Class<Entity<*,*,*,*>>, Int> = hashMapOf()
+		private val nextIds: MutableMap<String, Int> = hashMapOf()
 
 		fun resetIds() {
 			nextIds.clear()
 		}
 
-		fun nextId(clazz: Class<Entity<*,*,*,*>>): Int {
-			val nextId = nextIds.getOrPut(clazz, {0})
-			nextIds[clazz] = nextId+1
+		fun nextId(species: String): Int {
+			val nextId = nextIds.getOrPut(species, {0})
+			nextIds[species] = nextId+1
 			return nextId
 		}
 	}
@@ -74,8 +74,8 @@ class EvolutionRules<SG : Any, SP : Any, SB : Any, SBC : Any, PG : Any, PP : Any
 		problemPopulationSize = problemSize
 		Entity.resetIds()
 		return EvolutionState(
-				(1..solutionSize).map { Entity<SG,SP,SB, SBC>(genotype = solutionEvolver.initialize(), behaviour = solutionEvolver.initializeBehaviour() ,phenoMapping = { solutionEvolver.phenotypeMapping(it) }) },
-				(1..problemSize).map { Entity<PG,PP,PB, PBC>(genotype = problemEvolver.initialize(), behaviour = problemEvolver.initializeBehaviour(),phenoMapping = { problemEvolver.phenotypeMapping(it) }) }
+				(1..solutionSize).map { Entity<SG,SP,SB, SBC>(genotype = solutionEvolver.initialize(), behaviour = solutionEvolver.initializeBehaviour() ,phenoMapping = { solutionEvolver.phenotypeMapping(it) }, species = "solution") },
+				(1..problemSize).map { Entity<PG,PP,PB, PBC>(genotype = problemEvolver.initialize(), behaviour = problemEvolver.initializeBehaviour(),phenoMapping = { problemEvolver.phenotypeMapping(it) }, species = "problem") }
 		)
 	}
 
@@ -119,10 +119,10 @@ class EvolutionRules<SG : Any, SP : Any, SB : Any, SBC : Any, PG : Any, PP : Any
 			val children = (1..count).map {
 				val (mother, father) = parentCandidates.pickRandom { Math.random() }
 				val childGenotype = evolver.reproduce(mother.genotype, father.genotype)
-				Entity<G, P, B, BC>(genotype = childGenotype, behaviour = evolver.initializeBehaviour(), phenoMapping = { evolver.phenotypeMapping(it) })
+				Entity<G, P, B, BC>(genotype = childGenotype, behaviour = evolver.initializeBehaviour(), phenoMapping = { evolver.phenotypeMapping(it) }, species = mother.species)
 			}
 
-			val nextGeneration = filtered + children + toBeReplaced.map { Entity<G, P, B, BC>(genotype = evolver.initialize(), behaviour = evolver.initializeBehaviour(),  phenoMapping = { evolver.phenotypeMapping(it) }) }
+			val nextGeneration = filtered + children + toBeReplaced.map { Entity<G, P, B, BC>(genotype = evolver.initialize(), behaviour = evolver.initializeBehaviour(),  phenoMapping = { evolver.phenotypeMapping(it) }, species = it.species) }
 			return SRResult(nextGeneration, toBeRemoved)
 		} else {
 			return SRResult(population, arrayListOf())

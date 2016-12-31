@@ -23,7 +23,7 @@ class UnitTest {
 		val random = Random(1L)
 
 		val population = Array(10) {
-			Entity<Double, Double, Double, Double>(it.toDouble(), it.toDouble().squared) {
+			Entity<Double, Double, Double, Double>(it.toDouble(), it.toDouble().squared, "test") {
 				-it
 			}
 		}
