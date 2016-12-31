@@ -170,7 +170,7 @@ fun main(args: Array<String>) {
 										solutionBenchmarkCache.getOrPut(entity.id) {
 											Benchmark.evaluate(entity.phenotype, Benchmark.terrainBase, Triple(0.0, 0.0, 0L), average = {
 												value, i ->
-												Triple(value.first / i, value.second / i, 0L)
+												Triple(value.first / i, value.second / i, if (value.third > 0) 1L else 0L)
 //												value / i
 											}, sum = {
 												f, s ->
