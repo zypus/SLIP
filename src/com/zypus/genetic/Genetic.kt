@@ -23,7 +23,7 @@ data class Entity<G : Any, out P : Any, B: Any, BC: Any>(val genotype: G, var be
 	}
 
 	override fun equals(other: Any?): Boolean {
-		return if (other == null || this.javaClass != other.javaClass ) {
+		return if (other == null || other !is Entity<*,*,*,*> || this.species != other.species ) {
 			false
 		} else {
 			other.hashCode() == hashCode()
