@@ -43,6 +43,10 @@ val p = project {
 
 	assemble {
 		jar {
+			fatJar = true
+			manifest {
+				attributes("Main-Class", "com.zypus.SLIP.verification.ExperimentsKt")
+			}
 		}
 	}
 }

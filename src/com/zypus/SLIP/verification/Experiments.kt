@@ -51,15 +51,15 @@ fun main(args: Array<String>) {
 
 	var totalTime = 0L
 	var passedRuns = 0
-	val runs = 10
+	val runs = 1
 	val noiseStrength = 0.0
-	val cycles = 8000
+	val cycles = 1200
 	val benchmarksOn = 400
-	val outputOn= 10
+	val outputOn= 400
 
 	val times: MutableList<Long> = arrayListOf()
 
-	val expName = "test5"
+	val expName = "testX"
 	File("benchedExperiments/$expName").mkdir()
 	File("results/$expName").mkdir()
 
@@ -180,7 +180,7 @@ fun main(args: Array<String>) {
 											solutionBenchmarkCache.getOrPut(entity.id) {
 												Benchmark.evaluate(entity.phenotype, Benchmark.terrainBase, Triple(0.0, 0.0, 0L), average = {
 													value, i ->
-													Triple(value.first / i, value.second / i, 0L)
+													Triple(value.first / i, value.second / i, if (value.third > 0) 1L else 0L)
 //												value / i
 												}, sum = {
 													f, s ->
@@ -228,7 +228,7 @@ fun main(args: Array<String>) {
 											problemBenchmarkCache.getOrPut(entity.id) {
 												Benchmark.evaluate(entity.phenotype.terrain, Benchmark.controllerBase, Triple(0.0, 0.0, 0L), average = {
 													value, i ->
-													Triple(value.first / i, value.second / i, 0L)
+													Triple(value.first / i, value.second / i, if (value.third > 0) 1L else 0L)
 //												value / i
 												}, sum = {
 													f, s ->

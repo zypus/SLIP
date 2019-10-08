@@ -6,7 +6,7 @@ import org.junit.Test
 /**
  * TODO Add description
 
- * @author fabian <zypus@users.noreply.github.com>
+ * @author fabian<zypus@users.noreply.github.com>
  * *
  * @created 23/10/2016
  */
